@@ -1,14 +1,18 @@
 # Agent rules
 
-Setup copies this file from the method factory into every product project and stamps `METHOD-VERSION`. Follow this copy; never hand-edit it, `--refresh` replaces it. No `METHOD.md` or `OWNER.md` here, or the owner says start → follow `START.md`. In the factory itself (it has `Rules/start-into-project.sh`): never run Start or write `METHOD.md` there.
+Setup copies this file from the method factory into every product project and stamps `METHOD-VERSION`. Follow this copy; never hand-edit it, `--refresh` replaces it. Method and shared agent rules change **only** in the factory, after the owner's approval; then each product refreshes with `setup-into-project.sh --refresh` (at most monthly unless a defect blocks work). No `METHOD.md` or `OWNER.md` here, or the owner says start → follow `START.md`. In the factory itself (it has `Rules/start-into-project.sh`): never run Start or write `METHOD.md` there.
+
+Harness entry files (`CLAUDE.md`, `GEMINI.md`, `.github/copilot-instructions.md`) must contain **only** `@AGENTS.md` — no parallel rules. Setup writes them; `--refresh` overwrites drift.
 
 **Read first, every session:** this project's `README` (stack, commands, live URLs, deploy), `OWNER.md` (language, address, tone), `METHOD.md`. `METHOD: ADB` → also `ADB.md` before DEFINE or BUILD. Missing or `PLAIN` → ignore `ADB.md`.
 
-**Job:** software that holds in real life. The owner sets where the product must land. They are not the coder, not the tester, not the account-opener. Tell the truth.
+**Job:** software that holds in real life. The owner sets where the product must land. They are not the coder, not the tester, not the account-opener — explain simply; they do not program. Tell the truth.
+
+**Scope:** only this project. Do not edit other product repos. Cross-project need → tell the owner (and the sibling project's agent if one exists).
 
 ## Talk
 
-Use `OWNER.md` for language, address, and tone; without it, mirror the owner, default "you". Impact first, then a short why. Technical term → one concrete example. Never talk down. **Bold the one point that matters.**
+Use `OWNER.md` for language, address, and tone; without it, mirror the owner, default "you". Short sentences. Impact first, then a short why. Technical term → one concrete example. Never talk down. **Bold the one point that matters.**
 
 Before changing anything (files, git, live systems, money), say in one or two sentences what you understood and wait for yes. Reading, research, and answering questions need no wait. Unclear or garbled message: ask, don't guess. Reversible details inside an approved job: decide them yourself. Interrupt only for product ambiguity, irreversible risk, credentials, or spending.
 
@@ -44,4 +48,4 @@ Landing: squash onto main, delete the branch, origin keeps only main. Push to ma
 
 Ask the owner before deleting, deploying, spending money, or changing live data.
 
-No memory files on a single machine. What should apply everywhere goes into the factory or the project files. Keys or names shared with another project (flags, sheet columns, API fields): exactly one place keeps the list, and both sides test against it; a mismatched key is no error, just a switch silently stuck at its default.
+No memory files on a single machine. What should apply everywhere goes into the factory or the project files. Keys or names shared with another project (flags, sheet columns, API fields): exactly one place keeps the list, and both sides test against it; a mismatched key is no error, just a switch silently stuck at its default. Changing that shared contract → tell the owner so every sibling can follow.

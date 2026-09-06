@@ -345,3 +345,25 @@ SYMPTOM: BuchWeb wrote `NOTIFY_PREISERHOEHUNG_PUSH`, BuchScript read `NOTIFY_PRE
 ROOT CAUSE: The harness-level rule for all agents, "report schema changes to Chef", covers changes, not the existing inventory (that sentence is not in the factory `AGENTS.md`). No rule said where a shared list lives or that both sides test against it.
 PROPOSED CHANGE: One sentence in Hold: keys or names shared with another project — exactly one place keeps the list, both sides test against it. The list itself is project work (BuchScript keeps it as `scripts/test-push-schluessel.js`), not factory.
 STATUS: ADOPTED — 2026-09-05, `AGENTS.md` Hold.
+
+---
+
+## L-032 — Harness system prompt repeated product rules
+
+DATE: 2026-09-06
+PROJECT: factory (Paseo host prompt)
+SYMPTOM: Paseo `appendSystemPrompt` restated language, owner-is-not-coder, per-project scope, shared-sheet notice, and factory-refresh — all needed by agents that never see Paseo (Cursor, clasp-only, other hosts).
+ROOT CAUSE: Host prompt mixed orchestration (Chef, protected repos, host paths) with product agent rules.
+PROPOSED CHANGE: Factory `AGENTS.md` owns Scope (this project only), factory-only rule edits + refresh, shared-contract notice to the owner, short sentences / owner does not program. Paseo system prompt keeps only: Owner/Chef, host paths, protected list for Chef.
+STATUS: ADOPTED — 2026-09-06, `AGENTS.md` Job/Scope/Hold; Paseo prompt slimmed.
+
+---
+
+## L-033 — Harness files held parallel agent rules
+
+DATE: 2026-09-06
+PROJECT: factory
+SYMPTOM: Some products had rich `CLAUDE.md` / Copilot instructions; others only `@AGENTS.md`. Agents that open the harness file first never saw the factory rules, or drifted from a second copy.
+ROOT CAUSE: Setup wrote `AGENTS.md` but not the harness entry pointers.
+PROPOSED CHANGE: Setup always writes `CLAUDE.md`, `GEMINI.md`, and `.github/copilot-instructions.md` as only `@AGENTS.md`. Factory `AGENTS.md` states that rule. `--refresh` overwrites drift.
+STATUS: ADOPTED — 2026-09-06, `setup-into-project.sh`, `AGENTS.md`.

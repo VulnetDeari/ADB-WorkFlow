@@ -3,15 +3,17 @@
 #
 # Does, idempotently:
 #   1. Copy factory AGENTS.md into the project as AGENTS.md (always) and stamp METHOD-VERSION
-#   2. Copy Rules/skills/start/SKILL.md as START.md and install /start (always)
-#   3. Unless --plain: METHOD.md = METHOD: ADB; copy SKILL.md as ADB.md;
+#   2. Write harness pointers CLAUDE.md, GEMINI.md, .github/copilot-instructions.md
+#      as only `@AGENTS.md` (always; --refresh overwrites content drift)
+#   3. Copy Rules/skills/start/SKILL.md as START.md and install /start (always)
+#   4. Unless --plain: METHOD.md = METHOD: ADB; copy SKILL.md as ADB.md;
 #      install /adb commands. Writes a new METHOD.md. Does not switch an
 #      existing PLAIN/ADB line unless --switch (Start small↔large / risk=yes).
-#   4. --plain: METHOD.md = METHOD: PLAIN; remove ADB.md and /adb commands.
-#      Product adb/ docs stay. Existing ADB line: same rule as (3) — need --switch.
-#   5. Remove stray engine folders that are not this method
-#   6. Optionally ensure adb/08-OPEN-ISSUES.md (--register only; ADB mode)
-#   7. --refresh: overwrite AGENTS.md, START.md and (unless PLAIN) ADB.md from factory; reinstall commands
+#   5. --plain: METHOD.md = METHOD: PLAIN; remove ADB.md and /adb commands.
+#      Product adb/ docs stay. Existing ADB line: same rule as (4) — need --switch.
+#   6. Remove stray engine folders that are not this method
+#   7. Optionally ensure adb/08-OPEN-ISSUES.md (--register only; ADB mode)
+#   8. --refresh: overwrite AGENTS.md, START.md, harness pointers and (unless PLAIN) ADB.md from factory; reinstall commands
 #
 # OWNER.md and LESEN.html are written by Rules/start-into-project.sh, not this script.
 #
@@ -323,6 +325,38 @@ fi
 # --- AGENTS.md (copy of factory AGENTS.md; every product follows this file) ---
 sync_stamped_copy "$AGENTS_SRC" "$PROJECT/AGENTS.md" "AGENTS.md" "AGENTS.md"
 STALE_AGENTS=$SYNC_STALE
+
+# --- Harness pointers: only @AGENTS.md (no parallel rules) ---
+ensure_agents_pointer() {
+  local rel="$1"
+  local dest="$PROJECT/$rel"
+  # Compare without trailing newlines — $(...) strips them and would always look stale.
+  local want='@AGENTS.md'
+  local parent have
+  parent="$(dirname "$dest")"
+  have=""
+  if [ -f "$dest" ]; then
+    have="$(tr -d '\r\n' < "$dest")"
+  fi
+  if [ $CHECK -eq 1 ]; then
+    if [ ! -f "$dest" ]; then
+      echo "WOULD CREATE $dest (harness pointer -> AGENTS.md)"
+    elif [ "$have" != "$want" ]; then
+      echo "WOULD REFRESH $dest (harness pointer must be only @AGENTS.md)"
+    fi
+    return 0
+  fi
+  mkdir -p "$parent"
+  if [ -f "$dest" ] && [ "$have" = "$want" ]; then
+    return 0
+  fi
+  printf '%s\n' "$want" > "$dest"
+  note_changed "$rel"
+}
+
+ensure_agents_pointer "CLAUDE.md"
+ensure_agents_pointer "GEMINI.md"
+ensure_agents_pointer ".github/copilot-instructions.md"
 
 # --- START.md (copy of the Start skill; /start in every product, plain and ADB) ---
 sync_stamped_copy "$START_SKILL" "$PROJECT/START.md" "START.md" "Rules/skills/start/SKILL.md"
