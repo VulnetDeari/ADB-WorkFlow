@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Method hook (installed by setup-into-project.sh). Blocks commits that carry secrets.
+# Method hook (installed by setup-into-project.sh). Blocks commits that carry secrets or hidden trailing content.
 # No bypass flag on purpose. False alarm: tell the owner, do not use --no-verify.
 set -u
 
@@ -48,8 +48,35 @@ if [ -n "$assign" ]; then
   bad=1
 fi
 
+# 4. Hidden trailing content: a run of spaces pushes code off every screen;
+#    _0x…/_$_… are obfuscator names. Added lines only. Lockfiles, vendored,
+#    minified, maps and SVG are noisy by nature; LESSONS.md quotes the markers.
+hid=0
+trail=' {200,}|_0x[0-9a-f]{4,}|_\$_[0-9a-f]{3,}'
+while IFS= read -r f; do
+  [ -n "$f" ] || continue
+  case "$f" in
+    vendor/*|*/vendor/*|node_modules/*|*/node_modules/*) continue ;;
+    *.lock|package-lock.json|*/package-lock.json|pnpm-lock.yaml|*/pnpm-lock.yaml|yarn.lock|*/yarn.lock) continue ;;
+    *.min.js|*.map|*.svg|Methods/ADB/LESSONS.md) continue ;;
+  esac
+  found="$(git diff --cached --unified=0 --no-color -- "$f" \
+    | grep -E '^\+' | grep -Ev '^\+\+\+' \
+    | grep -E "$trail" || true)"
+  if [ -n "$found" ]; then
+    echo "BLOCKED: hidden trailing content or obfuscated name in $f:" >&2
+    printf '%s\n' "$found" | sed -E 's/ {20,}/ <spaces> /g' | cut -c1-120 | sed 's/^/  /' >&2
+    hid=1
+  fi
+done <<< "$staged"
+
 if [ $bad -eq 1 ]; then
   echo "Secrets never go into git. Move the value to the project's secret store and stage again." >&2
+fi
+if [ $hid -eq 1 ]; then
+  echo "A line nobody can see is not code anybody approved. Remove it, or show the owner why it belongs." >&2
+fi
+if [ $bad -eq 1 ] || [ $hid -eq 1 ]; then
   exit 1
 fi
 exit 0

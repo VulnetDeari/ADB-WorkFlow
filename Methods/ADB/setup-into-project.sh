@@ -14,6 +14,8 @@
 #   6. Remove stray engine folders that are not this method
 #   7. Optionally ensure adb/08-OPEN-ISSUES.md (--register only; ADB mode)
 #   8. --refresh: overwrite AGENTS.md, START.md, harness pointers and (unless PLAIN) ADB.md from factory; reinstall commands
+#   9. Write .gitattributes (* text=auto eol=lf) when none exists — never overwrite;
+#      warn when the project path sits inside a cloud-sync folder
 #
 # OWNER.md and LESEN.html are written by Rules/start-into-project.sh, not this script.
 #
@@ -70,6 +72,12 @@ grep -q 'MainAgent' "$AGENTS_SRC" || { echo "AGENTS.md source is not the product
 [ -f "$START_CMD" ] || { echo "start command missing: $START_CMD" >&2; exit 1; }
 
 PROJECT="$(cd "$PROJECT" && pwd -P)"
+
+# A working tree inside a two-way sync client gets [conflicted] copies and edits without commits.
+if printf '%s' "$PROJECT" | grep -qiE 'pcloud|dropbox|onedrive|google ?drive|icloud|com~apple~clouddocs|syncthing'; then
+  echo "WARN: $PROJECT sits inside a cloud-sync folder." >&2
+  echo "WARN: a Git working tree in a two-way sync client gets [conflicted] copies and changes without commits. Keep the checkout outside the sync folder; the remote is the sync." >&2
+fi
 sha="$(git -C "$SYSTEM_ROOT" rev-parse --short HEAD 2>/dev/null || echo unknown)"
 if ! git -C "$SYSTEM_ROOT" diff HEAD --quiet -- Methods/ADB/SKILL.md AGENTS.md 2>/dev/null; then
   sha="${sha}-dirty"
@@ -570,6 +578,17 @@ install_hooks() {
   done
 }
 install_hooks
+
+# --- .gitattributes: LF in repository and working tree on every OS, so byte counts and tests match CI. Never overwrites. ---
+gitattributes="$PROJECT/.gitattributes"
+if [ ! -e "$gitattributes" ]; then
+  if [ $CHECK -eq 1 ]; then
+    echo "WOULD CREATE $gitattributes (* text=auto eol=lf)"
+  else
+    printf '%s\n' '# Method: one line ending in the repository and the working tree on every OS.' '* text=auto eol=lf' > "$gitattributes"
+    note_changed ".gitattributes"
+  fi
+fi
 
 if [ $CHECK -eq 0 ]; then
   if [ ! -s "$PROJECT/AGENTS.md" ]; then

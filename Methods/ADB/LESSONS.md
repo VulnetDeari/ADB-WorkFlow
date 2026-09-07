@@ -378,3 +378,43 @@ SYMPTOM: Agents reported work as underway when nothing was running — plan done
 ROOT CAUSE: Truth covered real-life proof and done criteria, not status honesty while idle. Progressive tense and silent approved plans / unfinished Push Main had no rule against them.
 PROPOSED CHANGE: One paragraph in Truth: waiting is waiting; forgotten is yes; remind on stalled plans and Push Main; no progressive tense unless that step is actually running.
 STATUS: ADOPTED — 2026-09-07, `AGENTS.md` Truth.
+
+---
+
+## L-035 — Commit titles are not evidence
+
+DATE: 2026-09-08
+SYMPTOM: A commit titled "removed X" still contained X; the visible top of the file looked clean.
+ROOT CAUSE: Agents checked the title and the first lines, not the Git object.
+PROPOSED CHANGE: Any claim that a file is clean or identical is proven by the Git object — blob hash (`git rev-parse REF:path`) or byte size (`git show REF:path | wc -c`) — never by a title or a glance.
+STATUS: ADOPTED — 2026-09-08, `AGENTS.md` Truth, one sentence shared with L-038.
+
+---
+
+## L-036 — Hidden trailing content
+
+DATE: 2026-09-08
+SYMPTOM: Foreign code sat on the last line behind hundreds of spaces; every editor showed a clean file, and a single-marker search missed a second variant.
+ROOT CAUSE: Search for one known marker instead of the shape of the trick.
+PROPOSED CHANGE: On suspicion, scan broadly on `HEAD` and `origin/main`, excluding lockfiles and binaries: lines with ≥200 consecutive spaces, `eval(`, `atob(`, `new Function(`, `global.<short>=`, `_$_`, `_0x`. Zero hits before push; zero hits on `origin/main` after push.
+STATUS: ADOPTED — 2026-09-08, `Rules/hooks/pre-commit` block 4 on added lines: runs of ≥200 spaces, `_0x…`, `_$_…`; not `eval`/`atob`/`Function` (real code uses them and the hook has no bypass). Excepted: vendored and `node_modules`, lockfiles, `*.min.js`, `*.map`, `*.svg`, this file. `pre-push` inspects refs only, so no block there. Counter-proof in `check-factory.sh`.
+
+---
+
+## L-037 — No Git working tree inside a cloud-sync folder
+
+DATE: 2026-09-08
+SYMPTOM: `[conflicted N]` copies appeared, a freshly written file was renamed within minutes, file contents changed without any commit.
+ROOT CAUSE: The working tree was inside a two-way sync client.
+PROPOSED CHANGE: Working trees live outside every sync folder; the remote is the sync. When `[conflicted]` files appear, check the sync client first, not Git.
+STATUS: ADOPTED — 2026-09-08, `setup-into-project.sh` warns (does not refuse) when the project path names a sync client. Counter-proof in `check-factory.sh`.
+
+---
+
+## L-038 — CRLF distorts measurements and tests
+
+DATE: 2026-09-08
+SYMPTOM: Byte counts in the working tree differed from the Git object; tests that read source were red locally and green in CI.
+ROOT CAUSE: `core.autocrlf=true` on Windows.
+PROPOSED CHANGE: Measure at the Git object, never the working tree; tests that read source normalize line endings.
+STATUS: ADOPTED — 2026-09-08, `AGENTS.md` Truth (the L-035 sentence: measure at the Git object); setup writes `.gitattributes` `* text=auto eol=lf` when none exists, never overwrites. Counter-proof in `check-factory.sh`.

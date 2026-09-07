@@ -201,4 +201,45 @@ git -C "$HOOK_APP" checkout -q -b feature
 git -C "$HOOK_APP" push -q origin feature 2>/dev/null || fail "pre-push blocked a feature branch"
 ALLOW_MAIN_PUSH=1 git -C "$HOOK_APP" push -q origin main 2>/dev/null || fail "ALLOW_MAIN_PUSH=1 did not allow main"
 
-echo "OK: factory can Start; PLAIN, risk=yes, and METHOD flips match; hooks block secrets and main"
+# --- Hook: hidden trailing content blocked; the same line under vendor/ passes ---
+printf 'export const a = 1;%250s// trailing\n' '' > "$HOOK_APP/trail.js"
+git -C "$HOOK_APP" add trail.js
+if git -C "$HOOK_APP" commit -q -m "trail" 2>/dev/null; then
+  fail "pre-commit did not block a 250-space trailing line"
+fi
+git -C "$HOOK_APP" reset -q HEAD trail.js; rm -f "$HOOK_APP/trail.js"
+
+printf 'var _0x%s = 1;\n' 'a1b2c3' > "$HOOK_APP/obf.js"
+git -C "$HOOK_APP" add obf.js
+if git -C "$HOOK_APP" commit -q -m "obf" 2>/dev/null; then
+  fail "pre-commit did not block an obfuscator name"
+fi
+git -C "$HOOK_APP" reset -q HEAD obf.js; rm -f "$HOOK_APP/obf.js"
+
+mkdir -p "$HOOK_APP/vendor"
+printf 'export const a = 1;%250s// trailing\n' '' > "$HOOK_APP/vendor/trail.js"
+git -C "$HOOK_APP" add vendor/trail.js
+git -C "$HOOK_APP" commit -q -m "vendored" || fail "pre-commit blocked the same line under vendor/"
+
+# --- Setup: warns inside a cloud-sync folder, silent elsewhere; .gitattributes written once, never overwritten ---
+SYNC_ROOT="$(mktemp -d)"
+KEEP_APP="$(mktemp -d)"
+trap 'rm -rf "$APP" "$PLAIN_APP" "$SETUP_PLAIN" "$RISK_APP" "$HOOK_APP" "$HOOK_REMOTE" "$SYNC_ROOT" "$KEEP_APP"' EXIT
+SYNC_APP="$SYNC_ROOT/Dropbox/app"
+mkdir -p "$SYNC_APP"
+SYNC_ERR="$(mktemp)"
+Methods/ADB/setup-into-project.sh --plain "$SYNC_APP" >/dev/null 2>"$SYNC_ERR"
+grep -q 'cloud-sync folder' "$SYNC_ERR" || { cat "$SYNC_ERR" >&2; rm -f "$SYNC_ERR"; fail "setup did not warn about a cloud-sync folder"; }
+Methods/ADB/setup-into-project.sh --plain "$SETUP_PLAIN" >/dev/null 2>"$SYNC_ERR"
+if grep -q 'cloud-sync folder' "$SYNC_ERR"; then
+  rm -f "$SYNC_ERR"
+  fail "setup warned about cloud-sync on an ordinary path"
+fi
+rm -f "$SYNC_ERR"
+
+grep -qx '\* text=auto eol=lf' "$SETUP_PLAIN/.gitattributes" || fail "setup did not write .gitattributes"
+printf '*.png binary\n' > "$KEEP_APP/.gitattributes"
+Methods/ADB/setup-into-project.sh --plain "$KEEP_APP" >/dev/null
+[ "$(cat "$KEEP_APP/.gitattributes")" = '*.png binary' ] || fail "setup overwrote an existing .gitattributes"
+
+echo "OK: factory can Start; PLAIN, risk=yes, and METHOD flips match; hooks block secrets, main and hidden trailing content; setup warns on sync folders and writes .gitattributes once"
