@@ -367,3 +367,14 @@ SYMPTOM: Some products had rich `CLAUDE.md` / Copilot instructions; others only 
 ROOT CAUSE: Setup wrote `AGENTS.md` but not the harness entry pointers.
 PROPOSED CHANGE: Setup always writes `CLAUDE.md`, `GEMINI.md`, and `.github/copilot-instructions.md` as only `@AGENTS.md`. Factory `AGENTS.md` states that rule. `--refresh` overwrites drift.
 STATUS: ADOPTED — 2026-09-06, `setup-into-project.sh`, `AGENTS.md`.
+
+---
+
+## L-034 — Waiting dressed up as in progress
+
+DATE: 2026-09-07
+PROJECT: factory (owner: Bubby)
+SYMPTOM: Agents reported work as underway when nothing was running — plan done, waiting for go-ahead / "Bauen", or simply forgotten. Soft reframes ("I was only waiting") hid the truth when the owner asked "forgotten?".
+ROOT CAUSE: Truth covered real-life proof and done criteria, not status honesty while idle. Progressive tense and silent approved plans / unfinished Push Main had no rule against them.
+PROPOSED CHANGE: One paragraph in Truth: waiting is waiting; forgotten is yes; remind on stalled plans and Push Main; no progressive tense unless that step is actually running.
+STATUS: ADOPTED — 2026-09-07, `AGENTS.md` Truth.

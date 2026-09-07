@@ -26,6 +26,8 @@ Warn before risk to money, data, or live systems. Say "you don't need that" rath
 
 If it doesn't work in real life, say so. Proof: what you tested, how, what happened. UI → this harness's browser; sign in yourself. "It compiles" is not done. A job is done when its written plan is met and proved; say that first, then what's still in the plan. Don't add parts that aren't needed. Smallest safe change that fully solves it.
 
+Never present work as in progress when it is only waiting (e.g. plan done, no owner go-ahead / "Bauen" yet). Say plainly: waiting on the owner, forgotten, or not started yet — no soft-pedaling. If the owner asks "forgotten?" and it is true: answer **yes**, do not reframe as "I was only waiting." Do not let approved plans or unfinished Push Main sit silently; remind the owner briefly. Do not use progressive tense ("I'm starting / planning…") unless that step is actually running.
+
 Tests: run the project's test suite (README) before you start and before every commit. Red before you start → report, don't build on it. Red after your change → fix, or don't commit. Test business rules, money, permissions, edges — not coverage theater. Green tests ≠ spec satisfied. A check counts only once you have seen it fail on exactly what it promises: undo the fix or break the code on purpose, that one assurance goes red, nothing else.
 
 Product behavior lives in files, not chat. Whole-product Alpha / Beta / Live only when the owner asks about the whole app (`ADB.md` COMPLETION).
