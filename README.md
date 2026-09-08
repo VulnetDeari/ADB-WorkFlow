@@ -32,7 +32,7 @@ Start writes into the **app**: `METHOD.md`, `AGENTS.md`, `OWNER.md`, `LESEN.html
 ./Methods/ADB/setup-into-project.sh --plain /path/to/app
 ```
 
-Writes `AGENTS.md` (copy of this repo’s `AGENTS.md`), harness pointers `CLAUDE.md` / `GEMINI.md` / `.github/copilot-instructions.md` (only `@AGENTS.md`), `START.md`, `/start`, and `METHOD: PLAIN`. Also `.gitattributes` (`* text=auto eol=lf`, `*.bat`/`*.cmd` CRLF; only when none exists) and the git hook against secrets and hidden content; setup warns when the folder sits inside a cloud-sync client. Factory preview: `Rules/LESEN-DE.html`.
+Writes `AGENTS.md` (copy of this repo’s `AGENTS.md`), harness pointers `CLAUDE.md` / `GEMINI.md` / `.github/copilot-instructions.md` (only `@AGENTS.md`), `START.md`, `/start`, and `METHOD: PLAIN`. Also `.gitattributes` (`* text=auto eol=lf`, `*.bat`/`*.cmd` CRLF; only when none exists) and the git hook against secrets and hidden content (not scanned: dependency folders, root-level `dist/` and `build/`, lockfiles, minified files, maps, SVG; obfuscator-name markers are not checked in `*.md` / `*.txt`, blank runs and CR tricks are); setup warns when the folder sits inside a cloud-sync client. Factory preview: `Rules/LESEN-DE.html`.
 
 **Large / ADB:**
 

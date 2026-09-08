@@ -3,7 +3,7 @@
 # No bypass flag on purpose. False alarm: tell the owner, do not use --no-verify.
 set -u
 
-staged="$(git diff --cached --name-only --diff-filter=ACM)"
+staged="$(git diff --cached --name-only --diff-filter=ACM)" || { echo "BLOCKED: cannot read the index — a scan that cannot run does not pass." >&2; exit 1; }
 [ -n "$staged" ] || exit 0
 
 bad=0
@@ -24,52 +24,75 @@ while IFS= read -r f; do
   bad=1
 done <<< "$staged"
 
+# A scan that cannot run does not pass (L-056): every pipeline below is checked stage by stage —
+# git must succeed, each grep may find nothing (1) but must not fail (2+).
+scan_tmp="$(mktemp)"
+trap 'rm -f "$scan_tmp"' EXIT
+scan_ok() { local first="$1"; shift; [ "$first" -eq 0 ] || return 1; local s; for s in "$@"; do [ "$s" -le 1 ] || return 1; done; return 0; }
+
 # 2. Secret-looking content in the staged diff (added lines only).
 patterns='AKIA[0-9A-Z]{16}|ASIA[0-9A-Z]{16}|-----BEGIN [A-Z ]*PRIVATE KEY-----|ghp_[A-Za-z0-9]{36}|github_pat_[A-Za-z0-9_]{22,}|gho_[A-Za-z0-9]{36}|sk-[A-Za-z0-9_-]{20,}|sk-ant-[A-Za-z0-9_-]{20,}|xox[baprs]-[A-Za-z0-9-]{10,}|AIza[0-9A-Za-z_-]{35}|ya29\.[0-9A-Za-z_-]{20,}|SG\.[A-Za-z0-9_-]{22}\.[A-Za-z0-9_-]{43}|glpat-[A-Za-z0-9_-]{20}|eyJ[A-Za-z0-9_-]{30,}\.eyJ[A-Za-z0-9_-]{30,}\.[A-Za-z0-9_-]{20,}'
 
-hits="$(git diff --cached --unified=0 --no-color -- . \
+git diff --cached --unified=0 --no-color -- . \
   | grep -E '^\+' | grep -Ev '^\+\+\+' \
   | grep -E "$patterns" \
-  | grep -Eiv 'example|sample|placeholder|changeme|your[-_ ]|xxxx|dummy|redacted' || true)"
-if [ -n "$hits" ]; then
+  | grep -Eiv 'example|sample|placeholder|changeme|your[-_ ]|xxxx|dummy|redacted' > "$scan_tmp"
+st=("${PIPESTATUS[@]}")
+if ! scan_ok "${st[@]}"; then
+  echo "BLOCKED: secret scan failed (git ${st[0]}, grep ${st[1]}/${st[2]}/${st[3]}/${st[4]}) — a scan that cannot run does not pass." >&2
+  bad=1
+elif [ -s "$scan_tmp" ]; then
   echo "BLOCKED: secret-looking value in staged changes:" >&2
-  printf '%s\n' "$hits" | cut -c1-120 | sed 's/^/  /' >&2
+  cut -c1-120 "$scan_tmp" | sed 's/^/  /' >&2
   bad=1
 fi
 
 # 3. Assignments like password=..., api_key: "..." with a real-looking value.
-assign="$(git diff --cached --unified=0 --no-color -- . \
+git diff --cached --unified=0 --no-color -- . \
   | grep -E '^\+' | grep -Ev '^\+\+\+' \
   | grep -Ei '(password|passwd|secret|api[_-]?key|access[_-]?token|auth[_-]?token|client[_-]?secret)["'"'"']?[[:space:]]*[:=][[:space:]]*["'"'"'][^"'"'"']{8,}["'"'"']' \
-  | grep -Eiv 'example|sample|placeholder|changeme|your[-_ ]|xxxx|dummy|redacted|\$\{|\$[A-Z_]|getenv|process\.env|os\.environ|<[^>]+>' || true)"
-if [ -n "$assign" ]; then
+  | grep -Eiv 'example|sample|placeholder|changeme|your[-_ ]|xxxx|dummy|redacted|\$\{|\$[A-Z_]|getenv|process\.env|os\.environ|<[^>]+>' > "$scan_tmp"
+st=("${PIPESTATUS[@]}")
+if ! scan_ok "${st[@]}"; then
+  echo "BLOCKED: credential scan failed (git ${st[0]}, grep ${st[1]}/${st[2]}/${st[3]}/${st[4]}) — a scan that cannot run does not pass." >&2
+  bad=1
+elif [ -s "$scan_tmp" ]; then
   echo "BLOCKED: hard-coded credential in staged changes:" >&2
-  printf '%s\n' "$assign" | cut -c1-120 | sed 's/^/  /' >&2
+  cut -c1-120 "$scan_tmp" | sed 's/^/  /' >&2
   bad=1
 fi
 
-# 4. Hidden content: a run of 200+ blanks (space, tab, VT, NBSP, zero-width and other
-#    Unicode spaces) pushes code off every screen; a CR in the middle of a line lets the
-#    tail overwrite the head on a terminal; _0x…/_$_… at identifier start are obfuscator
-#    names. Added lines only, bytewise (LC_ALL=C, -U keeps a CR on Windows). Not scanned, by decision: dependency
-#    folders at any depth, root-level dist/ and build/, lockfiles, minified files, maps,
-#    SVG, Markdown and text — hidden content there is for the manual sweep (LESSONS L-036).
+# 4. Hidden content. Two rules for every scanned file — in this method the Markdown files ARE the
+#    executed text (AGENTS.md, ADB.md, START.md, the commands, adb/): a run of 200+ blanks (space, tab,
+#    VT, FF, NBSP as UTF-8 or as the single byte 0xA0, NEL, the 0x1C–0x1F separators, zero-width and
+#    other Unicode spaces) pushes text off every screen; a CR followed by visible text lets the tail
+#    overwrite the head on a terminal. One rule for code only: _0x…/_$_… at identifier start are
+#    obfuscator names — *.md and *.txt legitimately name them, so they skip that rule. Added lines only,
+#    bytewise (LC_ALL=C); UTF-16 and other wide encodings are not covered (LESSONS L-052). Not scanned,
+#    by decision: dependency folders at any depth, root-level dist/ and build/, lockfiles, minified files,
+#    maps, SVG — hidden content there is for the manual sweep (LESSONS L-036).
 hid=0
-blank=$'([[:blank:]\v]|\xc2\xa0|\xe2\x80[\x80-\x8d]|\xe2\x80\xaf|\xe2\x81\x9f|\xe2\x81\xa0|\xe3\x80\x80|\xef\xbb\xbf)'
-trail="${blank}"'{200,}|'$'\r''[[:print:][:blank:]]|(^|[^A-Za-z0-9_])_0x[0-9a-f]{4,}|(^|[^A-Za-z0-9_])_\$_[0-9a-f]{3,}'
+blank=$'([[:blank:]\v\f\x1c-\x1f\x85\xa0]|\xc2\xa0|\xe2\x80[\x80-\x8d]|\xe2\x80\xaf|\xe2\x81\x9f|\xe2\x81\xa0|\xe3\x80\x80|\xef\xbb\xbf)'
+hidden="${blank}"'{200,}|'$'\r''[[:print:][:blank:]]'
+markers='(^|[^A-Za-z0-9_])_0x[0-9a-f]{4,}|(^|[^A-Za-z0-9_])_\$_[0-9a-f]{3,}'
 while IFS= read -r f; do
   [ -n "$f" ] || continue
   case "$f" in
     vendor/*|*/vendor/*|node_modules/*|*/node_modules/*|dist/*|build/*) continue ;;
     *.lock|package-lock.json|*/package-lock.json|pnpm-lock.yaml|*/pnpm-lock.yaml|yarn.lock|*/yarn.lock) continue ;;
-    *.min.js|*.min.mjs|*.min.css|*.map|*.svg|*.md|*.txt) continue ;;
+    *.min.js|*.min.mjs|*.min.css|*.map|*.svg) continue ;;
   esac
-  found="$(git diff --cached --unified=0 --no-color -- "$f" \
-    | LC_ALL=C grep -U -E '^\+' | LC_ALL=C grep -U -Ev '^\+\+\+' \
-    | LC_ALL=C grep -U -E "$trail" || true)"
-  if [ -n "$found" ]; then
+  case "$f" in *.md|*.txt) pat="$hidden" ;; *) pat="$hidden|$markers" ;; esac
+  git diff --cached --unified=0 --no-color -- "$f" \
+    | LC_ALL=C grep -E '^\+' | LC_ALL=C grep -Ev '^\+\+\+' \
+    | LC_ALL=C grep -E "$pat" > "$scan_tmp"
+  st=("${PIPESTATUS[@]}")
+  if ! scan_ok "${st[@]}"; then
+    echo "BLOCKED: hidden-content scan failed on $f (git ${st[0]}, grep ${st[1]}/${st[2]}/${st[3]}) — a scan that cannot run does not pass." >&2
+    hid=1
+  elif [ -s "$scan_tmp" ]; then
     echo "BLOCKED: hidden content or obfuscated name in $f:" >&2
-    printf '%s\n' "$found" | LC_ALL=C sed -E "s/${blank}{20,}/ <blank> /g; s/"$'\r'"/<CR>/g" | cut -c1-120 | sed 's/^/  /' >&2
+    LC_ALL=C sed -E "s/${blank}{20,}/ <blank> /g; s/"$'\r'"/<CR>/g" "$scan_tmp" | cut -c1-120 | sed 's/^/  /' >&2
     hid=1
   fi
 done <<< "$staged"

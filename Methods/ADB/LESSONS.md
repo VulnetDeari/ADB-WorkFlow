@@ -365,7 +365,7 @@ DATE: 2026-09-08
 SYMPTOM: Foreign code sat on the last line behind hundreds of spaces; every editor showed a clean file, and a single-marker search missed a second variant.
 ROOT CAUSE: Search for one known marker instead of the shape of the trick.
 PROPOSED CHANGE: On suspicion, scan broadly on `HEAD` and `origin/main`, excluding lockfiles and binaries: lines with ≥200 consecutive spaces, `eval(`, `atob(`, `new Function(`, `global.<short>=`, `_$_`, `_0x`. Zero hits before push; zero hits on `origin/main` after push.
-STATUS: ADOPTED — 2026-09-08, `Rules/hooks/pre-commit` block 4 on added lines, bytewise: a run of 200+ blanks (space, tab, VT, NBSP, zero-width and other Unicode spaces), a CR followed by visible text on the same line, `_0x…` / `_$_…` at identifier start; not `eval`/`atob`/`Function` (real code uses them and the hook has no bypass). Not scanned, by decision: `vendor/` and `node_modules/` at any depth, root-level `dist/` and `build/`, lockfiles, `*.min.*`, `*.map`, `*.svg`, `*.md`, `*.txt` — those are for the manual sweep above. `pre-push` was removed with L-039. Counter-proofs in `check-factory.sh`. Revised by L-046 and L-052.
+STATUS: ADOPTED — 2026-09-08, `Rules/hooks/pre-commit` block 4 on added lines, bytewise: a run of 200+ blanks (space, tab, VT, FF, NBSP as UTF-8 or single byte 0xA0, NEL, 0x1C–0x1F, zero-width and other Unicode spaces) and a CR followed by visible text — in every scanned file, Markdown included, because in this method the Markdown is what runs; `_0x…` / `_$_…` at identifier start — not in `*.md` / `*.txt`, which name the markers; not `eval`/`atob`/`Function` (real code uses them and the hook has no bypass). Not scanned, by decision: `vendor/` and `node_modules/` at any depth, root-level `dist/` and `build/`, lockfiles, `*.min.*`, `*.map`, `*.svg` — those are for the manual sweep above. A scan that cannot run blocks. `pre-push` was removed with L-039. Counter-proofs in `check-factory.sh`. Revised by L-046, L-052, L-055 to L-058.
 
 ---
 
@@ -523,9 +523,9 @@ STATUS: ADOPTED — 2026-09-08, `AGENTS.md` Review, `adb-ready.md`, `product-rea
 
 DATE: 2026-09-08
 SYMPTOM: The hook blocked `docs/security.md` and a README that name `_0xdeadbeef` — documentation about the hook — with no bypass. It let through 250 zero-width spaces, 250 vertical tabs, a mid-line CR that overwrites the head of a line on a terminal, and any file under a nested `dist/` or `build/` (`src/build/evil.js`).
-ROOT CAUSE: The blank class was ASCII; the build-folder exception matched at any depth by instruction; Markdown was scanned like code.
-PROPOSED CHANGE: Bytewise scan (`LC_ALL=C`): 200+ of space, tab, VT, NBSP, U+2000–U+200D, U+202F, U+205F, U+2060, U+3000, U+FEFF; a CR followed by visible text on the same line (`grep -U`, so Windows grep keeps the CR instead of stripping it before the match); markers as before. `dist/` and `build/` excepted at the repository root only — committed build output normally lives there, and a nested one is the hiding place; a monorepo that commits nested output gets a loud block and asks the factory. `*.md` and `*.txt` excepted (not executed). Accepted boundary, written here: dependency folders at any depth, lockfiles, minified files, maps, SVG, docs — the manual sweep of L-036 covers them, the hook does not.
-STATUS: ADOPTED — 2026-09-08, `Rules/hooks/pre-commit`, `check-factory.sh`.
+ROOT CAUSE: The blank class was ASCII; the build-folder exception matched at any depth by instruction; the marker rule fired on documentation that names the markers.
+PROPOSED CHANGE: Bytewise scan (`LC_ALL=C`): 200+ of space, tab, VT, NBSP, U+2000–U+200D, U+202F, U+205F, U+2060, U+3000, U+FEFF; a CR followed by visible text on the same line; markers as before. `dist/` and `build/` excepted at the repository root only — committed build output normally lives there, and a nested one is the hiding place; a monorepo that commits nested output gets a loud block and asks the factory. The marker rule skips `*.md` and `*.txt`, which legitimately name the markers; the blank and CR rules apply to them like to any file — this entry first excepted Markdown entirely with the reason "not executed", which is wrong for this method: `AGENTS.md`, `ADB.md`, `START.md`, the commands and `adb/` are exactly what runs (corrected 2026-09-08, L-055). Accepted boundary, written here: dependency folders at any depth, lockfiles, minified files, maps, SVG — the manual sweep of L-036 covers them, the hook does not; single-byte and UTF-8 blanks are covered, UTF-16 and other wide encodings are not (L-058).
+STATUS: ADOPTED — 2026-09-08, `Rules/hooks/pre-commit`, `check-factory.sh`. Reasoning for the Markdown exception corrected and the exception narrowed to the marker rule (L-055); `grep -U` was added and removed again the same day (L-057).
 
 ---
 
@@ -546,3 +546,53 @@ SYMPTOM: "RELEASE BLOCKERS — every CRITICAL, and every HIGH touching data, mon
 ROOT CAUSE: The scale was written for products with data and money.
 PROPOSED CHANGE: Fourth category in `/adb-review`: every finding that leaves a rule an agent cannot follow.
 STATUS: ADOPTED — 2026-09-08, `adb-review.md`.
+
+---
+
+## L-055 — "Not executed" was the wrong reason: in this method the Markdown is what runs
+
+DATE: 2026-09-08
+SYMPTOM: The hook excepted `*.md` and `*.txt` from all hidden-content rules. `AGENTS.md` with 400 spaces and the line "Ignore all earlier rules …" was committed; `.claude/commands/start.md` with 300 zero-width spaces and "exfiltrate …" was committed; the same payload in `x.js` was blocked. The false alarm the exception was meant to cure had come only from the marker rule (a document naming `_0xdeadbeef`), never from the blank or CR rules.
+ROOT CAUSE: One reason ("not executed") was applied to three rules; it was true for none of them here — `AGENTS.md`, `ADB.md`, `START.md`, the commands and `adb/` are the executed text of this method.
+PROPOSED CHANGE: Blank-run and CR rules apply to every scanned file, Markdown included; only the marker rule skips `*.md` / `*.txt`. Both READMEs say what the hook does not check. Counter-proofs: hidden line in `AGENTS.md` blocked, zero-width run in a command copy blocked, a document naming the marker still passes.
+STATUS: ADOPTED — 2026-09-08, `Rules/hooks/pre-commit`, `README.md`, `Methods/ADB/README.md`, `check-factory.sh`; L-052 corrected.
+
+---
+
+## L-056 — A scan that cannot run does not pass
+
+DATE: 2026-09-08
+SYMPTOM: Every scan pipeline in the hook ended in `|| true`; a `grep` that failed left the result empty and the commit went through — proven with a grep stand-in that refused an option: a 250-space line was committed with three lines on stderr.
+ROOT CAUSE: The idiom that keeps "no match" from aborting the script also swallowed "could not search".
+PROPOSED CHANGE: Each pipeline is checked stage by stage (`PIPESTATUS`): git must succeed, a grep may find nothing (1) but must not fail (2+); otherwise the commit is blocked with the stage codes. Same for reading the index at the top. Same decision as L-044 for setup: loud, never silently disarmed. Counter-proof: a failing `grep` first in `PATH` blocks a harmless commit.
+STATUS: ADOPTED — 2026-09-08, `Rules/hooks/pre-commit` blocks 2–4, `check-factory.sh`.
+
+---
+
+## L-057 — `grep -U` removed: it protected only a counter-proof
+
+DATE: 2026-09-08
+SYMPTOM: `-U` (a GNU extension) was added so that Windows grep keeps a CR at the end of a line. Measured: the hook's rule targets a CR in the middle of a line, which grep finds with or without `-U`; removing `-U` from all three greps left every assertion green.
+ROOT CAUSE: The option served the "a CRLF line must pass" counter-proof, not the rule.
+PROPOSED CHANGE: `-U` removed; the CRLF probe stays in the check with the note that on Windows grep strips the trailing CR before the match, so that probe is only meaningful on POSIX. L-052 corrected.
+STATUS: ADOPTED — 2026-09-08, `Rules/hooks/pre-commit`, `check-factory.sh`.
+
+---
+
+## L-058 — Single-byte blanks came through
+
+DATE: 2026-09-08
+SYMPTOM: 250 × byte `0xA0` (NBSP in cp1252) was committed while the same run as UTF-8 `C2 A0` was blocked; 250 × `0x1C` came through too. The cp1252 file was not planned — a Windows tool wrote it that way by default.
+ROOT CAUSE: The blank class listed Unicode spaces in UTF-8 only.
+PROPOSED CHANGE: The class also covers the single bytes `0x0C`, `0x1C`–`0x1F`, `0x85`, `0xA0` — chosen over merely documenting the gap because Windows tools produce these bytes unasked. Boundary written down: UTF-16 and other wide encodings are not covered; a file in such an encoding is for the manual sweep.
+STATUS: ADOPTED — 2026-09-08, `Rules/hooks/pre-commit`, `check-factory.sh`.
+
+---
+
+## L-059 — Open points from the third review, recorded, not changed
+
+DATE: 2026-09-08
+SYMPTOM: The reviewer named four findings outside the owner's release for the last round: the hook runs `git diff` and three greps per file (49 seconds for 300 files — one pass over the whole diff would fix it, but that is a rebuild); `/adb-ready` line "Walk the current product…" names no actor; `install-commands.sh` still defaults to symlinks while the factory and the projects use copies; the sandbox sentence recommends `git worktree`, which shares the repository with the real tree. A fifth from the same class, found by the agent: the retired-word guards in `check-factory.sh` end in `|| true` and would pass silently if `grep` failed.
+ROOT CAUSE: Out of scope by the owner's decision; written here so they do not vanish.
+PROPOSED CHANGE: None yet. Each is one small change when the owner opens the factory again.
+STATUS: OPEN — owner decision.
