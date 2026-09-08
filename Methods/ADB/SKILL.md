@@ -37,7 +37,7 @@ Default small: `01-VISION`, `02-PRODUCT-SPEC`, `07-STATUS`. Split 03–06 and 08
 - **04** — stack, boundaries, deploy, security — only what matters, with WHY.
 - **05** — what DONE means for this product.
 - **06** — important WHY, not trivia.
-- **07** — header only: PHASE, NOW, NEXT, BLOCKERS, OPEN, READINESS. Several slices: `## Execution plan`. Preserve `## Readiness` — ReviewAgent writes it. MainAgent does not change the key.
+- **07** — header only: PHASE, NOW, NEXT, BLOCKERS, OPEN, READINESS. Several slices: `## Execution plan`. Preserve `## Readiness` and `## Last review` — ReviewAgent writes them. MainAgent does not change the key.
 - **08** — real unresolved problems, or `## Open issues` in 07 while collapsed.
 
 ## Issues
@@ -71,7 +71,7 @@ Hands, always in writing: PlanAgent gets the job + `adb/` and returns plan + don
 
 **SPEC → BUILD → PROVE → RECORD**
 
-- **SPEC** — what this slice must do, from `adb/`. Heavy: PlanAgent's plan + done criteria here.
+- **SPEC** — what this slice must do, from `adb/`. Heavy: PlanAgent's plan + done criteria written to `adb/` (`## Execution plan`) and committed by MainAgent before Code — that commit is the plan review's range.
 - **BUILD** — CodeAgent, smallest safe change. Delete dead code when safe.
 - **PROVE** — vs `adb/`, on a real path (`AGENTS.md` Truth).
 - **RECORD** — update `adb/` + STATUS, then run `/adb-status` (it increments CARRIED and applies CARRIED-3). Then commit (`AGENTS.md` Hold).
@@ -95,7 +95,7 @@ Not complete because it compiles. Intended behavior exists, real path, spec sati
 | `NICHT_FERTIG` | Core path broken, spec unsatisfied, or release blockers. |
 | `ALPHA` | Core path works. Gaps registered. Not real operations. **Never product complete.** |
 | `BETA` | Agreed scope matches `adb/`. Important flows + empty/loading/error on a real path. Only MEDIUM/LOW if the bar allows. |
-| `LIVE` | BETA + bar clear + 05 production items. Not "already online." Constrained self-check must not return LIVE. |
+| `LIVE` | BETA + bar clear + 05 production items. Not "already online." A self-check must not return LIVE. |
 
 The bar chooses BETA vs LIVE, not ALPHA vs BETA. `/adb-ready` only when the owner asks about the **whole app**, not after a slice whose plan is met. ReviewAgent walks the product, writes `READINESS` and overwrites `## Readiness`; MainAgent does not change the key. Stale after a later RECORD or spec change this walk covered.
 

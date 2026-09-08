@@ -11,12 +11,13 @@ Use only when the owner asks about the **whole app** (Alpha / Beta / Live / “i
 
 MainAgent starts **ReviewAgent** (subagent). ReviewAgent never implements. ReviewAgent writes `READINESS` and overwrites `## Readiness`. MainAgent does not change the key.
 
-Walk the current product on a real path (browser if UI). Proof: what you tested, how, what happened. Constrained self-check must not return `LIVE`.
+Hand and rules as `/adb-review`: two fields (`RANGE`, `SPEC`), the reviewer fetches the rest itself, changes nothing in the real tree, breaks on a copy. Walk the current product on a real path (browser if UI; sign in yourself). Proof as `TRIED`: what you tried, what happened. A self-check must not return `LIVE`.
 
 ```
 READINESS: NICHT_FERTIG | ALPHA | BETA | LIVE
-READINESS-BY: independent | constrained-self-check
-WALKED: what, how, what happened
+READINESS-BY: independent | self-check
+TRIED
+- command or step → what happened
 GAPS: none | ISSUE-IDs
 STALE-NEXT: later RECORD / spec this walk covered changes
 ```
@@ -28,4 +29,4 @@ STALE-NEXT: later RECORD / spec this walk covered changes
 | `BETA` | Agreed scope matches `adb/`. Important flows + empty/loading/error on a real path. |
 | `LIVE` | BETA + bar clear + production items in `adb/05`. Not “already online.” |
 
-The bar chooses BETA vs LIVE, not ALPHA vs BETA. Stale after a later RECORD or spec change this walk covered.
+The bar chooses BETA vs LIVE, not ALPHA vs BETA. Stale after a later RECORD or spec change this walk covered. No separate reviewer → the block is headed `Review: self-check`.

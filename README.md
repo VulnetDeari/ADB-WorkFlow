@@ -32,7 +32,7 @@ Start writes into the **app**: `METHOD.md`, `AGENTS.md`, `OWNER.md`, `LESEN.html
 ./Methods/ADB/setup-into-project.sh --plain /path/to/app
 ```
 
-Writes `AGENTS.md` (copy of this repo’s `AGENTS.md`), harness pointers `CLAUDE.md` / `GEMINI.md` / `.github/copilot-instructions.md` (only `@AGENTS.md`), `START.md`, `/start`, and `METHOD: PLAIN`. Factory preview: `Rules/LESEN-DE.html`.
+Writes `AGENTS.md` (copy of this repo’s `AGENTS.md`), harness pointers `CLAUDE.md` / `GEMINI.md` / `.github/copilot-instructions.md` (only `@AGENTS.md`), `START.md`, `/start`, and `METHOD: PLAIN`. Also `.gitattributes` (`* text=auto eol=lf`, `*.bat`/`*.cmd` CRLF; only when none exists) and the git hook against secrets and hidden content; setup warns when the folder sits inside a cloud-sync client. Factory preview: `Rules/LESEN-DE.html`.
 
 **Large / ADB:**
 
@@ -40,7 +40,7 @@ Writes `AGENTS.md` (copy of this repo’s `AGENTS.md`), harness pointers `CLAUDE
 ./Methods/ADB/setup-into-project.sh /path/to/app
 ```
 
-Also writes `METHOD: ADB`, `ADB.md` (copy of `SKILL.md`), and `/adb` commands. Factory preview: `Methods/ADB/ADB-LESEN-DE.html`.
+Also writes `METHOD: ADB`, `ADB.md` (copy of `SKILL.md`), `/adb` commands, and the same `.gitattributes` and hook. Factory preview: `Methods/ADB/ADB-LESEN-DE.html`.
 
 `--refresh` overwrites the method copies from the factory (`AGENTS.md`, `ADB.md`, `START.md`, and the harness pointers). It does not invent new owner answers and does not switch PLAIN↔ADB. Re-run `/start` to change language, tone, or small↔large — Start passes `--switch` so `METHOD.md` matches (`risk=yes` forces ADB) and PLAIN removes leftover `ADB.md` / `/adb` commands. `./Rules/start-into-project.sh --lesen-only --project /path/to/app` rebuilds `LESEN.html` from `OWNER.md`.
 
@@ -51,7 +51,7 @@ The method changes only in this factory, after the owner approves. Collect chang
 ## Clone
 
 ```bash
-git clone https://github.com/vulnetdeari-ops/adb.git
+git clone <url of this repository>
 cd adb
 ```
 

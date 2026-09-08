@@ -30,6 +30,15 @@ fi
 if grep -rniE '\bbmad\b' --include='*.md' --include='*.html' .; then
   fail "method text still names a former method"
 fi
+if grep -qE 'Push Main|ALLOW_MAIN_PUSH|push only when' AGENTS.md README.md Methods/ADB/README.md Methods/ADB/SKILL.md Rules/skills/start/SKILL.md Methods/ADB/commands/*.md Rules/templates/*.html; then
+  fail "a push gate came back (L-039)"
+fi
+if grep -qE 'constrained-self-check|WALKED' Methods/ADB/SKILL.md Methods/ADB/commands/adb-ready.md Rules/skills/product-readiness/SKILL.md; then
+  fail "readiness still speaks its own review vocabulary (L-040)"
+fi
+grep -q 'CRITICAL' Methods/ADB/commands/adb-review.md || fail "adb-review has no severity scale"
+grep -q 'changes nothing in the repo' Methods/ADB/commands/adb-review.md || fail "adb-review lets the reviewer touch the real tree"
+grep -q 'plan commit' Methods/ADB/commands/adb-review.md || fail "adb-review plan review has no executable range"
 grep -q 'This folder is the method factory' AGENTS.md && fail "root AGENTS.md is still the old pointer"
 
 if grep -q 'MainAgent' Rules/AGENTS.md 2>/dev/null; then
@@ -204,10 +213,19 @@ chmod +x "$HOOK_APP/.git/hooks/post-checkout"
 if git -C "$HOOK_APP" push -q origin feature 2>/dev/null; then
   fail "the stale pre-push stand-in did not block; this counter-proof proves nothing"
 fi
-Methods/ADB/setup-into-project.sh --refresh --plain "$HOOK_APP" >/dev/null 2>&1
+Methods/ADB/setup-into-project.sh --refresh --plain "$HOOK_APP" >/dev/null 2>&1 || fail "refresh failed on the stale-hook fixture"
 [ ! -e "$HOOK_APP/.git/hooks/pre-push" ] || fail "refresh left a stale method pre-push hook in place"
 [ -x "$HOOK_APP/.git/hooks/post-checkout" ] || fail "refresh removed a foreign hook"
 git -C "$HOOK_APP" push -q origin feature 2>/dev/null || fail "a push was blocked after refresh"
+# A foreign pre-push an older setup had set aside comes back when the method hook goes.
+printf '#!/usr/bin/env bash\nexit 0\n' > "$HOOK_APP/.git/hooks/pre-push.pre-method"; chmod +x "$HOOK_APP/.git/hooks/pre-push.pre-method"
+printf '#!/usr/bin/env bash\n# Method hook (installed by setup-into-project.sh). Old push gate.\nexit 1\n' > "$HOOK_APP/.git/hooks/pre-push"; chmod +x "$HOOK_APP/.git/hooks/pre-push"
+Methods/ADB/setup-into-project.sh --refresh --plain "$HOOK_APP" >/dev/null 2>&1 || fail "refresh failed on the displaced-hook fixture"
+[ -x "$HOOK_APP/.git/hooks/pre-push" ] || fail "refresh did not restore the project's own pre-push"
+if grep -q 'Method hook' "$HOOK_APP/.git/hooks/pre-push"; then fail "restored pre-push is still the method hook"; fi
+[ ! -e "$HOOK_APP/.git/hooks/pre-push.pre-method" ] || fail "pre-method copy left behind after restore"
+rm -f "$HOOK_APP/.git/hooks/pre-push"
+[ "$(tr -cd '\r' < "$HOOK_APP/.git/hooks/pre-commit" | wc -c)" -eq 0 ] || fail "installed pre-commit carries CR bytes"
 
 # --- Hook: hidden trailing content blocked; the same line under vendor/ passes ---
 printf 'export const a = 1;%250s// trailing\n' '' > "$HOOK_APP/trail.js"
@@ -228,6 +246,34 @@ mkdir -p "$HOOK_APP/vendor"
 printf 'export const a = 1;%250s// trailing\n' '' > "$HOOK_APP/vendor/trail.js"
 git -C "$HOOK_APP" add vendor/trail.js
 git -C "$HOOK_APP" commit -q -m "vendored" || fail "pre-commit blocked the same line under vendor/"
+
+{ printf 'export const a = 1;'; head -c 250 /dev/zero | tr '\0' '\t'; printf '// trailing\n'; } > "$HOOK_APP/tabs.js"
+git -C "$HOOK_APP" add tabs.js
+if git -C "$HOOK_APP" commit -q -m "tabs" 2>/dev/null; then
+  fail "pre-commit did not block a 250-tab trailing line"
+fi
+git -C "$HOOK_APP" reset -q HEAD tabs.js; rm -f "$HOOK_APP/tabs.js"
+
+printf 'var _$_%s = 1;\n' 'a1b' > "$HOOK_APP/obf2.js"
+git -C "$HOOK_APP" add obf2.js
+if git -C "$HOOK_APP" commit -q -m "obf2" 2>/dev/null; then
+  fail "pre-commit did not block the _\$_ marker"
+fi
+git -C "$HOOK_APP" reset -q HEAD obf2.js; rm -f "$HOOK_APP/obf2.js"
+
+mkdir -p "$HOOK_APP/dist" "$HOOK_APP/tests"
+printf 'var _0x%s = 1;
+' 'a1b2c3' > "$HOOK_APP/dist/vendor.js"
+git -C "$HOOK_APP" add dist/vendor.js
+git -C "$HOOK_APP" commit -q -m "build output" || fail "pre-commit blocked an obfuscated name under dist/"
+printf 'export const w = "wallet_0x%s";
+' 'deadbeef' > "$HOOK_APP/tests/wallets.js"
+git -C "$HOOK_APP" add tests/wallets.js
+git -C "$HOOK_APP" commit -q -m "wallet id" || fail "pre-commit blocked _0x inside an identifier"
+printf 'a{}%250s/*x*/
+' '' > "$HOOK_APP/app.min.css"
+git -C "$HOOK_APP" add app.min.css
+git -C "$HOOK_APP" commit -q -m "minified css" || fail "pre-commit blocked minified css"
 
 # --- Setup: warns inside a cloud-sync folder, silent elsewhere; .gitattributes written once, never overwritten ---
 SYNC_ROOT="$(mktemp -d)"
@@ -250,4 +296,24 @@ printf '*.png binary\n' > "$KEEP_APP/.gitattributes"
 Methods/ADB/setup-into-project.sh --plain "$KEEP_APP" >/dev/null
 [ "$(cat "$KEEP_APP/.gitattributes")" = '*.png binary' ] || fail "setup overwrote an existing .gitattributes"
 
-echo "OK: factory can Start; PLAIN, risk=yes, and METHOD flips match; the hook blocks secrets and hidden trailing content, never a push; setup warns on sync folders and writes .gitattributes once"
+# --- A factory with CRLF hooks installs LF; a factory without Rules/hooks does not disarm a project ---
+HALF="$(mktemp -d)"
+CR_APP="$(mktemp -d)"
+trap 'rm -rf "$APP" "$PLAIN_APP" "$SETUP_PLAIN" "$RISK_APP" "$HOOK_APP" "$HOOK_REMOTE" "$SYNC_ROOT" "$KEEP_APP" "$HALF" "$CR_APP"' EXIT
+tar -C "$ROOT" --exclude=.git -cf - . | tar -C "$HALF" -xf -
+perl -pi -e 's/\n/\r\n/' "$HALF/Rules/hooks/pre-commit"
+git init -q -b main "$CR_APP"
+"$HALF/Methods/ADB/setup-into-project.sh" --plain "$CR_APP" >/dev/null 2>&1 || fail "setup from a CRLF factory failed"
+[ "$(tr -cd '\r' < "$CR_APP/.git/hooks/pre-commit" | wc -c)" -eq 0 ] || fail "a CRLF factory installed a CRLF hook"
+if "$HALF/Methods/ADB/setup-into-project.sh" --plain "$CR_APP" 2>/dev/null | grep -q 'CHANGED: git hook'; then
+  fail "hook reinstalled on every run when the factory source is CRLF"
+fi
+rm -rf "$HALF/Rules/hooks"
+HALF_ERR="$(mktemp)"
+"$HALF/Methods/ADB/setup-into-project.sh" --refresh --plain "$HOOK_APP" >/dev/null 2>"$HALF_ERR" || { cat "$HALF_ERR" >&2; rm -f "$HALF_ERR"; fail "refresh from a factory without Rules/hooks crashed"; }
+[ -x "$HOOK_APP/.git/hooks/pre-commit" ] || fail "a factory without Rules/hooks removed the project's pre-commit"
+grep -q 'incomplete' "$HALF_ERR" || { rm -f "$HALF_ERR"; fail "a factory without Rules/hooks did not warn"; }
+rm -f "$HALF_ERR"
+grep -qx '\*\.bat text eol=crlf' "$SETUP_PLAIN/.gitattributes" || fail "no CRLF rule for .bat in .gitattributes"
+
+echo "OK: factory can Start; PLAIN, risk=yes, and METHOD flips match; the hook blocks secrets and hidden trailing content (spaces or tabs), never a push, and lets honest build output through; setup warns on sync folders, writes .gitattributes once, keeps hooks when the factory is incomplete"

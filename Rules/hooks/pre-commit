@@ -48,24 +48,24 @@ if [ -n "$assign" ]; then
   bad=1
 fi
 
-# 4. Hidden trailing content: a run of spaces pushes code off every screen;
-#    _0x…/_$_… are obfuscator names. Added lines only. Lockfiles, vendored,
+# 4. Hidden trailing content: a run of blanks (spaces or tabs) pushes code off every screen;
+#    _0x…/_$_… at identifier start are obfuscator names. Added lines only. Lockfiles, vendored, build output,
 #    minified, maps and SVG are noisy by nature; LESSONS.md quotes the markers.
 hid=0
-trail=' {200,}|_0x[0-9a-f]{4,}|_\$_[0-9a-f]{3,}'
+trail='[[:blank:]]{200,}|(^|[^A-Za-z0-9_])_0x[0-9a-f]{4,}|(^|[^A-Za-z0-9_])_\$_[0-9a-f]{3,}'
 while IFS= read -r f; do
   [ -n "$f" ] || continue
   case "$f" in
-    vendor/*|*/vendor/*|node_modules/*|*/node_modules/*) continue ;;
+    vendor/*|*/vendor/*|node_modules/*|*/node_modules/*|dist/*|*/dist/*|build/*|*/build/*) continue ;;
     *.lock|package-lock.json|*/package-lock.json|pnpm-lock.yaml|*/pnpm-lock.yaml|yarn.lock|*/yarn.lock) continue ;;
-    *.min.js|*.map|*.svg|Methods/ADB/LESSONS.md) continue ;;
+    *.min.js|*.min.mjs|*.min.css|*.map|*.svg|Methods/ADB/LESSONS.md) continue ;;
   esac
   found="$(git diff --cached --unified=0 --no-color -- "$f" \
     | grep -E '^\+' | grep -Ev '^\+\+\+' \
     | grep -E "$trail" || true)"
   if [ -n "$found" ]; then
     echo "BLOCKED: hidden trailing content or obfuscated name in $f:" >&2
-    printf '%s\n' "$found" | sed -E 's/ {20,}/ <spaces> /g' | cut -c1-120 | sed 's/^/  /' >&2
+    printf '%s\n' "$found" | sed -E 's/[[:blank:]]{20,}/ <blank> /g' | cut -c1-120 | sed 's/^/  /' >&2
     hid=1
   fi
 done <<< "$staged"

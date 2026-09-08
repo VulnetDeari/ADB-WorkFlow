@@ -8,7 +8,7 @@ description: "Rewrite ADB STATUS and judge the work against completion."
 Canonical: this project’s `ADB.md`. Method repo: `SKILL.md`.
 Reload existing `adb/` files. Those files outrank chat.
 
-1. **Rewrite** `07-STATUS` header only: PHASE, NOW, NEXT, BLOCKERS, OPEN, READINESS. Concise overwrite, not a changelog. Preserve `## Open issues` (collapsed), `## Execution plan`, `## Readiness` verbatim. Do not invent READINESS — only ReviewAgent via `/adb-ready`. MainAgent does not change it.
+1. **Rewrite** `07-STATUS` header only: PHASE, NOW, NEXT, BLOCKERS, OPEN, READINESS. Concise overwrite, not a changelog. Preserve `## Open issues` (collapsed), `## Execution plan`, `## Readiness`, `## Last review` verbatim. Do not invent READINESS — only ReviewAgent via `/adb-ready`. MainAgent does not change it.
 2. **Layout** — numbered `adb/` names only; one issue register (08, or STATUS while collapsed — not both). `ADB.md` is the method copy.
 3. **Drift** — code vs `adb/`. Accidental code is not new product truth.
 4. **CARRIED** — this review counts (SKILL.md Issues).

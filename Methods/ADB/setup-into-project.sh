@@ -14,7 +14,7 @@
 #   6. Remove stray engine folders that are not this method
 #   7. Optionally ensure adb/08-OPEN-ISSUES.md (--register only; ADB mode)
 #   8. --refresh: overwrite AGENTS.md, START.md, harness pointers and (unless PLAIN) ADB.md from factory; reinstall commands
-#   9. Write .gitattributes (* text=auto eol=lf) when none exists — never overwrite;
+#   9. Write .gitattributes (* text=auto eol=lf; *.bat and *.cmd CRLF) when none exists — never overwrite;
 #      warn when the project path sits inside a cloud-sync folder
 #
 # OWNER.md and LESEN.html are written by Rules/start-into-project.sh, not this script.
@@ -552,11 +552,16 @@ install_hooks() {
     [A-Za-z]:/*) ;;
     *) hooks_dir="$PROJECT/$hooks_dir" ;;
   esac
+  # A half factory (no Rules/hooks, or no pre-commit in it) must not disarm a project: leave installed hooks alone and say so.
+  if [ ! -f "$HOOKS_SRC/pre-commit" ]; then
+    echo "WARN: $HOOKS_SRC has no pre-commit — this factory clone is incomplete. Installed hooks left untouched; the secrets hook was not refreshed." >&2
+    return 0
+  fi
   for name in pre-commit; do
     src="$HOOKS_SRC/$name"
     [ -f "$src" ] || continue
     dest="$hooks_dir/$name"
-    if [ -f "$dest" ] && cmp -s "$src" "$dest"; then
+    if [ -f "$dest" ] && cmp -s <(sed 's/\r$//' "$src") "$dest"; then
       continue
     fi
     if [ -f "$dest" ] && ! grep -q '^# Method hook' "$dest"; then
@@ -572,7 +577,7 @@ install_hooks() {
       continue
     fi
     mkdir -p "$hooks_dir"
-    cp "$src" "$dest"
+    sed 's/\r$//' "$src" > "$dest"   # LF regardless of the factory checkout (L-038)
     chmod +x "$dest"
     note_changed "git hook $name"
   done
@@ -586,10 +591,16 @@ install_hooks() {
     grep -q '^# Method hook' "$stale" || continue
     if [ $CHECK -eq 1 ]; then
       echo "WOULD REMOVE stale method hook $stale"
+      [ -f "$stale.pre-method" ] && echo "WOULD RESTORE $stale.pre-method"
       continue
     fi
     rm -f "$stale"
     note_changed "git hook $name removed"
+    if [ -f "$stale.pre-method" ]; then
+      mv "$stale.pre-method" "$stale"
+      echo "WARN: restored the project's own $name hook from $name.pre-method (an older setup had set it aside)." >&2
+      note_changed "git hook $name restored"
+    fi
   done
 }
 install_hooks
@@ -600,7 +611,7 @@ if [ ! -e "$gitattributes" ]; then
   if [ $CHECK -eq 1 ]; then
     echo "WOULD CREATE $gitattributes (* text=auto eol=lf)"
   else
-    printf '%s\n' '# Method: one line ending in the repository and the working tree on every OS.' '* text=auto eol=lf' > "$gitattributes"
+    printf '%s\n' '# Method: one line ending in the repository and the working tree on every OS.' '* text=auto eol=lf' '*.bat text eol=crlf' '*.cmd text eol=crlf' > "$gitattributes"
     note_changed ".gitattributes"
   fi
 fi

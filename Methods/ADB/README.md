@@ -23,7 +23,7 @@ Without the interview (no language question — not a finished first run if the 
 ./setup-into-project.sh --register /path/to/project   # optional: create adb/08-OPEN-ISSUES.md
 ```
 
-`setup-into-project.sh` copies factory `AGENTS.md` to project `AGENTS.md` (stamped `METHOD-VERSION`). First layout follows the flags: without `--plain` it writes `METHOD: ADB`, **copies `SKILL.md` to `ADB.md`**, and installs slash commands as **copies**. `--plain` writes `METHOD: PLAIN` and **removes** `ADB.md` and `/adb` commands. Product `adb/` docs stay. An existing `METHOD.md` line does **not** flip unless Start passes `--switch` (small↔large or `risk=yes`). `--refresh` updates copies; it does not invent a method switch or owner answers. It **does not** create `adb/08-OPEN-ISSUES.md` unless you pass `--register`. Start writes `OWNER.md` / `LESEN.html`; setup without the interview does not. If a copy is older than the factory file, setup reports `STALE` and does not stamp.
+`setup-into-project.sh` copies factory `AGENTS.md` to project `AGENTS.md` (stamped `METHOD-VERSION`). First layout follows the flags: without `--plain` it writes `METHOD: ADB`, **copies `SKILL.md` to `ADB.md`**, and installs slash commands as **copies**. `--plain` writes `METHOD: PLAIN` and **removes** `ADB.md` and `/adb` commands. Product `adb/` docs stay. An existing `METHOD.md` line does **not** flip unless Start passes `--switch` (small↔large or `risk=yes`). `--refresh` updates copies; it does not invent a method switch or owner answers. It **does not** create `adb/08-OPEN-ISSUES.md` unless you pass `--register`. Start writes `OWNER.md` / `LESEN.html`; setup without the interview does not. If a copy is older than the factory file, setup reports `STALE` and does not stamp. Setup also writes `.gitattributes` (`* text=auto eol=lf`, `*.bat`/`*.cmd` CRLF) when none exists, installs the git hook against secrets and hidden content, and warns when the project sits inside a cloud-sync client.
 
 Slash commands (`/adb`, `/adb-define`, `/adb-slice`, `/adb-review`, `/adb-status`, `/adb-triage`, `/adb-ready`) live in [`commands/`](commands/). They point at the project’s `ADB.md`.
 
@@ -46,7 +46,7 @@ Vision, Product Spec and the rest of `adb/01`…`adb/07` are **not** created by 
 
 - **Ask** — grill the product, not the user. Research what can be discovered. Offer real choices. `Decide for me` is valid.
 - **Decide** — keep that in `adb/`. Small products may collapse to Vision, Product Spec and Status. Larger products use `adb/01` … `adb/08`. Uncertain findings get registered, not swallowed.
-- **Build** — CodeAgent executes against `adb/` (MainAgent directs). Prove on a real path (browser, tests, logins). Missing required behavior is fixed or written down, not ignored. Git: AGENTS.md (auto-commit when the job is done; push only when the owner asks).
+- **Build** — CodeAgent executes against `adb/` (MainAgent directs). Prove on a real path (browser, tests, logins). Missing required behavior is fixed or written down, not ignored. Git: AGENTS.md (commit when the job is done).
 
 The full method is in [`SKILL.md`](SKILL.md).
 
