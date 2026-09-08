@@ -19,7 +19,7 @@
 </div>
 
 <h1>Small method</h1>
-<p>Start set this app to the <strong>small</strong> method. No ADB, no <code>/adb</code> commands. You set where the product must land. You are not the coder, not the tester, not the one who signs into every site. You talk only to <strong>MainAgent</strong>. MainAgent builds and proves <em>in this chat</em> (CodeAgent work). Subagents are not required here — except money, login, live, or other people’s data.</p>
+<p>Start set this app to the <strong>small</strong> method. No ADB, no <code>/adb</code> commands. You set where the product must land. You are not the coder, not the tester, not the one who signs into every site. You talk only to <strong>MainAgent</strong>. MainAgent builds and proves <em>in this chat</em> (CodeAgent work). The actual change determines whether separate planning or independent review is needed.</p>
 <div class="box">
 <strong>Product:</strong> {{PRODUCT}}<br>
 <strong>Language:</strong> {{LANGUAGE}} · <strong>Address:</strong> {{ADDRESS}} · <strong>Tone:</strong> {{TONE}}<br>
@@ -29,21 +29,22 @@
 <h2>What you do</h2>
 <ul>
   <li>Say the destination: what the app must do, for whom, what it is not.</li>
-  <li>Choose only when two <em>different</em> products or scopes are possible: chips when clickable, else A/B/C; last = “decide for me”. Not every small detail.</li>
+  <li>Choose only when two <em>different</em> products or scopes are possible: chips when clickable, else A/B/C; “decide for me” only for decisions you can delegate. Not every small detail.</li>
   <li>Only you: 2FA, captcha, passkey, keys the system must not type.</li>
   <li>Live: only when you ask. After a finished job the system commits on its own.</li>
-  <li>Change language or tone: run <code>/start</code> (or say “Start”) again. Same options — you do not invent options.</li>
+  <li>Change language or tone: run <code>/start</code> (or say “Start”) again. Known answers are reused; only missing or changed settings are requested.</li>
 </ul>
 
 <h2>What you do not do</h2>
 <ul>
   <li>Do not code, do not test it yourself, do not take a click tour.</li>
-  <li>No passwords in chat. Follow only the files in this folder.</li>
+  <li>No passwords in chat. Project rules live in this folder; your current explicit instructions are taken into account.</li>
   <li>Do not treat the factory (method repo) as the app. Open the <strong>app</strong> every day.</li>
 </ul>
 
 <h2>What the system can do</h2>
 <ul>
+  <li>Present intended behavior and clarify scope before building a new product; reuse existing approvals.</li>
   <li>Build, prove on a real path (browser when there is a UI), sign in where it can.</li>
   <li>Speak your language, with the address and tone from <code>OWNER.md</code>.</li>
   <li>Commit when a job is done.</li>
@@ -66,5 +67,6 @@
 <h2>What you can do next</h2>
 <p>Give the first job in one sentence, e.g. what someone should be able to do on screen. If money, login, live, or other people’s data show up: run Start again — the <strong>large</strong> method is often required.</p>
 <p>Factory update: <code>git pull</code> in the factory, then setup <code>--refresh</code> in the app. <code>OWNER.md</code> stays until you run Start again.</p>
+<p>Project-specific rules live in <code>PROJECT-RULES.md</code>. Refresh preserves these rules, your settings and product documents. A mandatory requirement that fails or remains unverified means the task needs more work. The agent provides a concise result with accessible evidence.</p>
 </body>
 </html>

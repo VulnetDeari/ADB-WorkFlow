@@ -606,3 +606,25 @@ SYMPTOM: L-057 removed `-U` on the reviewer's measurement that grep finds a mid-
 ROOT CAUSE: A rule was withdrawn on a measurement that did not cover the case the rule exists for.
 PROPOSED CHANGE: `-U` back in all three greps of block 4, with the true reason in the hook comment. Blocks 2 and 3 stay without it: their patterns (key prefixes, `password=` assignments) contain no CR and do not depend on one; stripping a CR can only join bytes, never hide those matches. `check-factory.sh` gains the case itself: a `-text` file with a CR hidden mid-line and CRLF endings must be blocked (red without `-U`), and ordinary CRLF Windows source must pass. L-057 marked withdrawn, reason recorded.
 STATUS: ADOPTED — 2026-09-08, `Rules/hooks/pre-commit` block 4, `check-factory.sh`; L-057 WITHDRAWN.
+
+---
+
+## L-061 — Scope approval and rule loading are workflow boundaries
+
+DATE: 2026-09-08
+SYMPTOM: A small new product received a complete specification without product clarification. Workers verified that specification; a reviewer reported mandatory failures with a passing verdict after receiving a rewritten review brief.
+ROOT CAUSE: Method selection was treated as scope approval; critical review definitions lived in command files instead of the canonical method, and handoffs substituted their own rules. Fixes also lacked checks of neighboring existing behavior.
+CHANGE: AGENTS owns shared authority, role selection and proof. ADB owns all phase/review rules. Reference-only commands route to the same workflow used by natural-language requests. Material requirements carry provenance; the executor checks recorded scope approval. Small low-risk tasks can be performed by MainAgent; no recursive teams or per-agent documents. Compliance and impact are separate. Context loads by role/phase, and full reports are not duplicated into chat.
+VALIDATION: See `Rules/WORKFLOW-CHECKS.md` and `Rules/VALIDATION.md`. Structural checks alone do not establish agent compliance.
+STATUS: ADOPTED — shared workflow and reference distribution verified; tested scope and environment limits recorded in `Rules/VALIDATION.md`.
+
+---
+
+## L-062 — Refresh must preserve project ownership
+
+DATE: 2026-09-08
+SYMPTOM: A method update could replace local harness rules, disable a foreign hook, remove unrelated method folders, or regenerate owner answers through the Start refresh entrypoint.
+ROOT CAUSE: Installation treated destination filenames as ownership and mixed method refresh with setup answers.
+CHANGE: PROJECT-RULES is project-owned and survives refresh. Preflight checks conflicts before replacing files; method refresh preserves OWNER/LESEN/METHOD/product docs. Unrelated engines and backups stay intact. Harness references remain separate from project rules. Known command ownership is determined from content/targets, not a filename alone.
+VALIDATION: `Rules/check-preservation.sh` exercises byte preservation and conflict behavior. `Rules/VALIDATION.md` records actual tested environments and remaining limits.
+STATUS: ADOPTED — factory and preservation suites passed; independent ownership rechecks and environment limits recorded in `Rules/VALIDATION.md`.

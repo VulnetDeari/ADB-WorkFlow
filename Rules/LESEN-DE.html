@@ -17,11 +17,11 @@
 </div>
 
 <h1>Methode starten</h1>
-<p>Dieses Repo ist die Factory, nicht die App. Oben liegt <code>AGENTS.md</code> — das sind die Agenten-Regeln. Sag <strong>Start</strong> oder <code>/start</code>: erst die Sprache, dann landet eine <em>Kopie</em> in deinem App-Ordner, zusammen mit <code>OWNER.md</code> und <code>LESEN.html</code> in genau dieser Sprache. Die Factory selbst bleibt ohne App-Dateien.</p>
-<p>Jede Frage bietet Optionen: <strong>Chips</strong> zum Anklicken, wenn der Chat das kann — sonst <strong>A/B/C</strong> tippen (kurz, zuletzt „entscheide du“). Sprache: Deutsch, English, Shqip, Italiano, Français, Español — oder du tippst <em>jede</em> andere. Du musst keine Optionen erfinden.</p>
-<p><strong>Klein:</strong> nur die normale Methode — du sagst das Ziel, redest mit <strong>MainAgent</strong>, der in diesem Chat baut und prüft. Subagenten nur bei Geld/Login/Live oder bei der großen Methode.</p>
-<p><strong>Groß:</strong> dieselbe Sprache plus ADB (erst in Dateien klären, dann Scheiben). Lese-Vorschau: <code>Methods/ADB/ADB-LESEN-DE.html</code>.</p>
-<p>Geld, Login, Live oder Daten von anderen → große Methode, auch wenn du „klein“ gesagt hast.</p>
+<p>Dieses Repo ist die Factory, nicht die App. Oben liegt <code>AGENTS.md</code> — das sind die Agenten-Regeln. Sag <strong>Start</strong> oder <code>/start</code>: der Agent übernimmt bekannte Antworten und klärt fehlende Einstellungen. Danach liegen die Methodenkopien, <code>OWNER.md</code> und <code>LESEN.html</code> in deiner Sprache im App-Ordner. Die Factory selbst bleibt ohne App-Dateien.</p>
+<p>Jede Frage bietet Optionen: <strong>Chips</strong> zum Anklicken, wenn der Chat das kann — sonst <strong>A/B/C</strong> tippen (kurz; „entscheide du“ nur bei delegierbaren Entscheidungen). Sprache: Deutsch, English, Shqip, Italiano, Français, Español — oder du tippst <em>jede</em> andere. Du musst keine Optionen erfinden.</p>
+<p><strong>PLAIN:</strong> du sagst das Ziel und redest mit <strong>MainAgent</strong>. Die konkrete Änderung bestimmt, ob separate Planung oder unabhängige Prüfung nötig ist.</p>
+<p><strong>ADB:</strong> Produktverhalten und Freigabe festhalten, dann in nutzbaren Schritten bauen. Auch für kleine Apps geeignet; keine Pflicht zu drei Agenten. Lese-Vorschau: <code>Methods/ADB/ADB-LESEN-DE.html</code>.</p>
+<p>Geld, Login, Live oder Daten von anderen bestimmen den Prüfbedarf. Bei solchem Risiko wählt Start ADB; die konkrete Änderung bestimmt die Rollen.</p>
 
 <h2>Was du tust</h2>
 <p>Ziel sagen. Nur entscheiden, wenn zwei verschiedene Produkte möglich sind. 2FA nur du. Täglich die <strong>App</strong> öffnen, nicht diese Factory. Cloud: App-Repo, nachdem die Kopien committet sind.</p>
@@ -32,5 +32,6 @@
 <h2>Ohne Start (Terminal)</h2>
 <p>Klein: nicht nötig, wenn du Start im Chat machst. Terminal nur ohne Interview: <code>./Methods/ADB/setup-into-project.sh --plain /pfad/zur/app</code> — dann fehlen Sprache, <code>OWNER.md</code> und <code>LESEN.html</code>.</p>
 <p>Groß: dasselbe ohne <code>--plain</code>. Ohne Start fehlen <code>OWNER.md</code> und die sprachrichtige <code>LESEN.html</code> — nachholen mit <code>/start</code>.</p>
+<p>Projektspezifische Regeln stehen in <code>PROJECT-RULES.md</code>. Ein Refresh erhält diese Regeln, deine Einstellungen und die Produktdokumente. Ein verletztes oder ungeprüftes Pflichtverhalten bedeutet Nacharbeit. Der Agent nennt das Ergebnis knapp und macht die Nachweise zugänglich.</p>
 </body>
 </html>

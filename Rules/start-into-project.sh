@@ -83,6 +83,14 @@ if [ -n "$PROJECT" ] && is_factory "$PROJECT"; then
   exit 1
 fi
 
+# A refresh never rewrites interview answers or the owner's reading page.
+if [ $REFRESH -eq 1 ]; then
+  [ $LESEN_ONLY -eq 0 ] || { echo "--refresh cannot combine with --lesen-only" >&2; exit 2; }
+  refresh_args=(--refresh)
+  [ $CHECK -eq 0 ] || refresh_args+=(--check)
+  exec "$SETUP" "${refresh_args[@]}" "$PROJECT"
+fi
+
 read_owner_field() {
   local file="$1" key="$2"
   sed -n "s/^${key}: //p" "$file" | head -n 1
@@ -317,6 +325,13 @@ if [ $CHECK -eq 1 ]; then
   fi
   echo "Start (check only): method=$METHOD language=$LANGUAGE project=$PROJECT"
   exit 0
+fi
+
+# Preflight conflicts before writing personal settings.
+if [ $LESEN_ONLY -eq 0 ]; then
+  preflight_args=(--check --switch)
+  [ "$METHOD" != plain ] || preflight_args+=(--plain)
+  "$SETUP" "${preflight_args[@]}" "$PROJECT" >/dev/null
 fi
 
 # OWNER.md first so setup does not warn that Start skipped language.

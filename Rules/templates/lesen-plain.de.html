@@ -19,7 +19,7 @@
 </div>
 
 <h1>Kleine Methode</h1>
-<p>Start hat diese App auf die <strong>kleine</strong> Methode gesetzt. Kein ADB, keine <code>/adb</code>-Befehle. Du sagst, wo das Produkt landen soll. Du bist nicht der Coder, nicht der Tester, nicht der, der sich überall anmeldet. Du redest nur mit <strong>MainAgent</strong>. Der baut und prüft <em>in diesem Chat</em> (CodeAgent-Arbeit). Subagenten sind hier nicht Pflicht — außer Geld, Login, Live oder fremde Daten.</p>
+<p>Start hat diese App auf die <strong>kleine</strong> Methode gesetzt. Kein ADB, keine <code>/adb</code>-Befehle. Du sagst, wo das Produkt landen soll. Du bist nicht der Coder, nicht der Tester, nicht der, der sich überall anmeldet. Du redest nur mit <strong>MainAgent</strong>. Der baut und prüft <em>in diesem Chat</em> (CodeAgent-Arbeit). Die konkrete Änderung bestimmt zusätzliche Planung und unabhängige Prüfung.</p>
 <div class="box">
 <strong>Produkt:</strong> {{PRODUCT}}<br>
 <strong>Sprache:</strong> {{LANGUAGE}} · <strong>Anrede:</strong> {{ADDRESS}} · <strong>Ton:</strong> {{TONE}}<br>
@@ -29,21 +29,22 @@
 <h2>Was du tust</h2>
 <ul>
   <li>Ziel sagen: was die App können soll, für wen, was sie nicht ist.</li>
-  <li>Nur entscheiden, wenn zwei <em>verschiedene</em> Produkte oder Umfänge möglich sind: Chips wenn klickbar, sonst A/B/C; zuletzt „entscheide du“. Nicht bei jeder Kleinigkeit.</li>
+  <li>Nur entscheiden, wenn zwei <em>verschiedene</em> Produkte oder Umfänge möglich sind: Chips wenn klickbar, sonst A/B/C; „entscheide du“ nur bei delegierbaren Entscheidungen. Nicht bei jeder Kleinigkeit.</li>
   <li>Nur du: 2FA, Captcha, Passkey, Schlüssel, die das System nicht eingeben darf.</li>
   <li>Live: nur wenn du das willst. Commit nach erledigtem Auftrag macht das System selbst.</li>
-  <li>Sprache oder Ton ändern: nochmal <code>/start</code> (oder „Start“). Dieselben Optionen, nicht neu erfinden.</li>
+  <li>Sprache oder Ton ändern: nochmal <code>/start</code> (oder „Start“). Bereits bekannte Antworten werden übernommen; gefragt wird nur nach fehlenden oder zu ändernden Einstellungen.</li>
 </ul>
 
 <h2>Was du nicht tust</h2>
 <ul>
   <li>Nicht codeen, nicht selbst testen, nicht durch Klick-Touren geschickt werden.</li>
-  <li>Keine Passwörter in den Chat. Nur den Dateien in diesem Ordner folgen.</li>
+  <li>Keine Passwörter in den Chat. Die Projektregeln liegen in diesem Ordner; deine ausdrücklichen aktuellen Anweisungen werden berücksichtigt.</li>
   <li>Die Factory (Methoden-Repo) nicht als App behandeln. Täglich die <strong>App</strong> öffnen.</li>
 </ul>
 
 <h2>Was das System tun kann</h2>
 <ul>
+  <li>Vor einem neuen Produkt das beabsichtigte Verhalten vorlegen und den Umfang klären; bereits erteilte Freigaben übernehmen.</li>
   <li>Bauen, auf dem echten Weg prüfen (Browser, wenn es eine Oberfläche gibt), sich anmelden wo es geht.</li>
   <li>In deiner Sprache sprechen, mit der Anrede und dem Ton aus <code>OWNER.md</code>.</li>
   <li>Nach einem erledigten Auftrag committen.</li>
@@ -66,5 +67,6 @@
 <h2>Weiter</h2>
 <p>Sag den ersten Auftrag in einem Satz, z. B. was man auf dem Bildschirm tun können soll. Bei Geld, Login, Live oder Daten von anderen: nochmal Start — dann wird oft die <strong>große</strong> Methode nötig.</p>
 <p>Factory-Update: in der Factory <code>git pull</code>, dann in der App Setup mit <code>--refresh</code>. Deine Antworten in <code>OWNER.md</code> bleiben, bis du Start wieder laufen lässt.</p>
+<p>Projektspezifische Regeln stehen in <code>PROJECT-RULES.md</code>. Ein Refresh erhält diese Regeln, deine Einstellungen und die Produktdokumente. Ein verletztes oder ungeprüftes Pflichtverhalten bedeutet Nacharbeit. Der Agent nennt das Ergebnis knapp und macht die Nachweise zugänglich.</p>
 </body>
 </html>

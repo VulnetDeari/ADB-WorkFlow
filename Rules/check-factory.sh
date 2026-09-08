@@ -37,11 +37,10 @@ retired() { grep -rlE "$1" . --exclude-dir=.git --exclude=LESSONS.md --exclude=c
 [ -z "$(retired 'constrained-self-check|WALKED')" ] || fail "readiness still speaks its own review vocabulary (L-040): $(retired 'constrained-self-check|WALKED' | tr '\n' ' ')"
 [ -z "$(retired 'ReviewAgent writes|writes the READINESS|does not change the key')" ] || fail "a reviewer still writes into the real tree (L-048): $(retired 'ReviewAgent writes|writes the READINESS|does not change the key' | tr '\n' ' ')"
 [ -z "$(retired 'Execution plan`\) and committed|criteria into `adb/`, MainAgent')" ] || fail "the slice plan still lives in Execution plan (L-049)"
-# The review command must define its scale, thresholds, sandbox and plan range — the definitions, not a word somewhere.
-grep -q '^\*\*Severity:\*\* CRITICAL' Methods/ADB/commands/adb-review.md || fail "adb-review has no severity definition"
-grep -q '^\*\*Verdict:\*\* FAIL' Methods/ADB/commands/adb-review.md || fail "adb-review has no verdict definition"
-grep -q '^\*\*The reviewer changes nothing in the repo\.\*\*' Methods/ADB/commands/adb-review.md || fail "adb-review lets the reviewer touch the real tree"
-grep -q 'the range is the plan commit' Methods/ADB/commands/adb-review.md || fail "adb-review plan review has no executable range"
+# The canonical method owns review rules; command files only reference it.
+grep -q '^\*\*Severity:\*\* CRITICAL' Methods/ADB/SKILL.md || fail "ADB has no severity definition"
+grep -q '^\*\*Verdict:\*\* FAIL' Methods/ADB/SKILL.md || fail "ADB has no verdict definition"
+python3 Rules/check-layout.py
 grep -q 'Product truth written to `adb/`' AGENTS.md || fail "AGENTS.md does not cover the plan commit (L-049)"
 grep -q 'on a copy, never in the real tree' AGENTS.md || fail "AGENTS.md sandbox half-sentence missing (L-051)"
 # Harness copies inside the factory are real files identical to the canonical command (symlinks are stubs on Windows).
@@ -61,11 +60,7 @@ if git ls-files -s Methods/ADB/.claude Methods/ADB/.codex Methods/ADB/.cursor .c
 fi
 grep -q 'This folder is the method factory' AGENTS.md && fail "root AGENTS.md is still the old pointer"
 
-if grep -q 'MainAgent' Rules/AGENTS.md 2>/dev/null; then
-  :
-else
-  grep -q '\.\./AGENTS.md' Rules/AGENTS.md || fail "Rules/AGENTS.md should point at ../AGENTS.md"
-fi
+[ ! -e Rules/AGENTS.md ] || fail "duplicate AGENTS.md path in Rules"
 
 # Refuse Start against the factory
 ERR="$(mktemp)"
@@ -225,26 +220,36 @@ git -C "$HOOK_APP" commit -q -m "example" || fail "pre-commit blocked .env.examp
 
 git -C "$HOOK_APP" push -q origin main 2>/dev/null || fail "push to main was blocked; the method does not gate pushes"
 git -C "$HOOK_APP" checkout -q -b feature
-# A stale method pre-push from an older factory goes on refresh; a foreign hook stays.
-printf '#!/usr/bin/env bash\n# Method hook (installed by setup-into-project.sh). Old push gate.\nexit 1\n' > "$HOOK_APP/.git/hooks/pre-push"
-chmod +x "$HOOK_APP/.git/hooks/pre-push"
+# A real historical method hook goes on refresh; marked custom hooks are tested separately.
+legacy_revision="$(git rev-list --all -- Rules/hooks/pre-push 2>/dev/null | tail -n 1 || true)"
 printf '#!/usr/bin/env bash\nexit 0\n' > "$HOOK_APP/.git/hooks/post-checkout"
 chmod +x "$HOOK_APP/.git/hooks/post-checkout"
-if git -C "$HOOK_APP" push -q origin feature 2>/dev/null; then
-  fail "the stale pre-push stand-in did not block; this counter-proof proves nothing"
+if [ -n "$legacy_revision" ]; then
+  git show "$legacy_revision:Rules/hooks/pre-push" > "$HOOK_APP/.git/hooks/pre-push"
+  chmod +x "$HOOK_APP/.git/hooks/pre-push"
+  printf 'feature change\n' >> "$HOOK_APP/README.md"
+  git -C "$HOOK_APP" add README.md
+  git -C "$HOOK_APP" commit -q -m "feature change"
+  if git -C "$HOOK_APP" push -q origin feature:main 2>/dev/null; then
+    fail "the historical pre-push did not block; this counter-proof proves nothing"
+  fi
+  Methods/ADB/setup-into-project.sh --refresh --plain "$HOOK_APP" >/dev/null 2>&1 || fail "refresh failed on the stale-hook fixture"
+  [ ! -e "$HOOK_APP/.git/hooks/pre-push" ] || fail "refresh left a known historical method hook in place"
+  [ -x "$HOOK_APP/.git/hooks/post-checkout" ] || fail "refresh removed a foreign hook"
+  git -C "$HOOK_APP" push -q origin feature:main 2>/dev/null || fail "a push was blocked after refresh"
+  # Restore a displaced project hook only after recognizing the retired method hook exactly.
+  printf '#!/usr/bin/env bash\nexit 0\n' > "$HOOK_APP/.git/hooks/pre-push.pre-method"
+  chmod +x "$HOOK_APP/.git/hooks/pre-push.pre-method"
+  git show "$legacy_revision:Rules/hooks/pre-push" > "$HOOK_APP/.git/hooks/pre-push"
+  chmod +x "$HOOK_APP/.git/hooks/pre-push"
+  Methods/ADB/setup-into-project.sh --refresh --plain "$HOOK_APP" >/dev/null 2>&1 || fail "refresh failed on the displaced-hook fixture"
+  [ -x "$HOOK_APP/.git/hooks/pre-push" ] || fail "refresh did not restore the project's own pre-push"
+  if grep -q 'Method hook' "$HOOK_APP/.git/hooks/pre-push"; then fail "restored pre-push is still the method hook"; fi
+  [ ! -e "$HOOK_APP/.git/hooks/pre-push.pre-method" ] || fail "pre-method copy left behind after restore"
+  rm -f "$HOOK_APP/.git/hooks/pre-push"
+else
+  echo 'UNVERIFIED: historical hook migration requires factory Git history'
 fi
-Methods/ADB/setup-into-project.sh --refresh --plain "$HOOK_APP" >/dev/null 2>&1 || fail "refresh failed on the stale-hook fixture"
-[ ! -e "$HOOK_APP/.git/hooks/pre-push" ] || fail "refresh left a stale method pre-push hook in place"
-[ -x "$HOOK_APP/.git/hooks/post-checkout" ] || fail "refresh removed a foreign hook"
-git -C "$HOOK_APP" push -q origin feature 2>/dev/null || fail "a push was blocked after refresh"
-# A foreign pre-push an older setup had set aside comes back when the method hook goes.
-printf '#!/usr/bin/env bash\nexit 0\n' > "$HOOK_APP/.git/hooks/pre-push.pre-method"; chmod +x "$HOOK_APP/.git/hooks/pre-push.pre-method"
-printf '#!/usr/bin/env bash\n# Method hook (installed by setup-into-project.sh). Old push gate.\nexit 1\n' > "$HOOK_APP/.git/hooks/pre-push"; chmod +x "$HOOK_APP/.git/hooks/pre-push"
-Methods/ADB/setup-into-project.sh --refresh --plain "$HOOK_APP" >/dev/null 2>&1 || fail "refresh failed on the displaced-hook fixture"
-[ -x "$HOOK_APP/.git/hooks/pre-push" ] || fail "refresh did not restore the project's own pre-push"
-if grep -q 'Method hook' "$HOOK_APP/.git/hooks/pre-push"; then fail "restored pre-push is still the method hook"; fi
-[ ! -e "$HOOK_APP/.git/hooks/pre-push.pre-method" ] || fail "pre-method copy left behind after restore"
-rm -f "$HOOK_APP/.git/hooks/pre-push"
 [ "$(tr -cd '\r' < "$HOOK_APP/.git/hooks/pre-commit" | wc -c)" -eq 0 ] || fail "installed pre-commit carries CR bytes"
 
 # --- Hook: hidden trailing content blocked; the same line under vendor/ passes ---

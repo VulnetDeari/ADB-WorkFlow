@@ -18,11 +18,11 @@
 </div>
 
 <h1>ADB — Ask. Decide. Build.</h1>
-<p>Zuerst <strong>Start</strong> (<code>/start</code>): Sprache, Ton, klein oder groß — Antworten sind <strong>Chips</strong> zum Anklicken wenn der Chat das kann, sonst <strong>A/B/C</strong>; nichts erfinden. Groß legt ADB in die App. Du weißt, wo das Produkt landen soll. Du bist nicht der Coder, nicht der Tester, nicht der, der sich überall anmeldet. Du redest nur mit <strong>MainAgent</strong>. Bei ADB <em>muss</em> MainAgent die Subagenten <strong>PlanAgent</strong>, <strong>CodeAgent</strong>, <strong>ReviewAgent</strong> starten. PlanAgent schreibt das Ziel in Dateien. CodeAgent baut in Stücken und prüft selbst: Browser, Tests, Logins. Du sagst nur, wenn es zwei verschiedene Produkte oder Umfänge sein können: Chip oder A/B/C oder entscheide du.</p>
+<p>Du redest mit <strong>MainAgent</strong>. Kleine, klare und risikoarme Aufgaben kann er selbst umsetzen und prüfen. Separate Planung, Umsetzung oder Prüfung wird eingesetzt, wenn die konkrete Änderung sie braucht. Zuerst legt der Agent das beabsichtigte Produktverhalten vor und hält deine Freigabe oder delegierten Entscheidungen fest. Die Wahl von ADB allein gibt keine Produktspezifikation frei.</p>
 
 <h2>DEFINE</h2>
-<p>Noch kein Produkt-Code. Fragen und in <code>adb/</code> schreiben, bis ein <em>frischer</em> Agent aus den Dateien bauen kann, ohne Verhalten zu erfinden. Dann einmal: BUILD starten?</p>
-<p>Klein: Vision, Spec, Status. Größer: die nummerierten Dateien. Chat ist nicht die Wahrheit. Wünsche gehören nicht ins Issue-Register.</p>
+<p>Noch kein Produkt-Code. Fragen und in <code>adb/</code> schreiben, bis ein <em>frischer</em> Agent aus den Dateien bauen kann, ohne Verhalten zu erfinden. Vor BUILD wird die Freigabe festgehalten; bereits erteilte Freigaben werden übernommen.</p>
+<p>Klein: Vision, Spec, Status. Größer: bei Bedarf aufteilen. Deine aktuellen ausdrücklichen Anweisungen gelten; betroffene Produktdateien werden vor der Umsetzung angepasst.</p>
 
 <h2>BUILD</h2>
 <p>Eine Scheibe: was dieser Teil laut <code>adb/</code> tun muss → bauen → auf dem echten Weg prüfen → Dateien nachziehen. Wenn diese Punkte stimmen: Scheibe fertig. Kein Pflicht-nächstes Stück, außer es steht schon im Plan oder du willst weiter.</p>
@@ -31,5 +31,6 @@
 <h2>Ganze App</h2>
 <p>Kompiliert zählt nicht. ALPHA = der Kernweg geht, Lücken stehen da — nie „Produkt fertig“. BETA = vereinbarter Umfang inkl. leer/Fehler hält. LIVE = das plus die Qualitätslatte, nicht „steht schon online“.</p>
 <p>Nur wenn du die <strong>ganze App</strong> meinst: eigener Check (<code>/adb-ready</code>). Ein Auftrag, dessen Plan stimmt, ist fertig ohne diesen Check.</p>
+<p>Projektspezifische Regeln stehen in <code>PROJECT-RULES.md</code>. Ein Refresh erhält diese Regeln, deine Einstellungen und die Produktdokumente. Ein verletztes oder ungeprüftes Pflichtverhalten bedeutet Nacharbeit. Der Agent nennt das Ergebnis knapp und macht die Nachweise zugänglich.</p>
 </body>
 </html>

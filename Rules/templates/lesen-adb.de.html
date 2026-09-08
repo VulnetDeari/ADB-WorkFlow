@@ -19,7 +19,7 @@
 </div>
 
 <h1>Große Methode — Ask. Decide. Build.</h1>
-<p>Start hat diese App auf <strong>ADB</strong> gesetzt. Du weißt, wo das Produkt landen soll. Du bist nicht der Coder, nicht der Tester, nicht der, der sich überall anmeldet. Du redest nur mit <strong>MainAgent</strong>. Bei ADB <em>muss</em> MainAgent die Subagenten <strong>PlanAgent</strong>, <strong>CodeAgent</strong>, <strong>ReviewAgent</strong> starten — keine extra Chats für dich. PlanAgent schreibt das Ziel in Dateien. CodeAgent baut in Scheiben und prüft selbst.</p>
+<p>Du redest mit <strong>MainAgent</strong>. Kleine, klare und risikoarme Aufgaben kann er selbst umsetzen und prüfen. Separate Planung, Umsetzung oder Prüfung wird eingesetzt, wenn die konkrete Änderung sie braucht. Zuerst legt der Agent das beabsichtigte Produktverhalten vor und hält deine Freigabe oder delegierten Entscheidungen fest. Die Wahl von ADB allein gibt keine Produktspezifikation frei.</p>
 <div class="box">
 <strong>Produkt:</strong> {{PRODUCT}}<br>
 <strong>Sprache:</strong> {{LANGUAGE}} · <strong>Anrede:</strong> {{ADDRESS}} · <strong>Ton:</strong> {{TONE}}<br>
@@ -29,22 +29,22 @@
 <h2>Was du tust</h2>
 <ul>
   <li>Absicht, Priorität, Abwägung sagen. Nicht Repo-Technik erfinden, die das System nachlesen kann.</li>
-  <li>Nur entscheiden, wenn zwei verschiedene Produkte oder Umfänge möglich sind: Chips wenn klickbar, sonst A/B/C; zuletzt „entscheide du“.</li>
+  <li>Nur entscheiden, wenn zwei verschiedene Produkte oder Umfänge möglich sind: Chips wenn klickbar, sonst A/B/C; „entscheide du“ nur bei delegierbaren Entscheidungen.</li>
   <li>Nur du: 2FA, Captcha, Passkey, blockierte Schlüssel.</li>
   <li>Live nur auf deine Bitte. Nach einem erledigten Stück commitet das System.</li>
-  <li>Sprache oder Ton: nochmal <code>/start</code>. Dieselben Optionen.</li>
+  <li>Sprache oder Ton: nochmal <code>/start</code>. Bekannte Antworten werden übernommen; nur fehlende oder zu ändernde Einstellungen werden erfragt.</li>
 </ul>
 
 <h2>Was du nicht tust</h2>
 <ul>
   <li>Nicht codeen, nicht Klick-Tour, keine Passwörter in den Chat.</li>
-  <li>Keine Extra-Prozess-Dateien. In diesem Ordner gelten nur die Dateien der Methode.</li>
+  <li>Keine zusätzlichen Regelkopien pro Agent. <code>PROJECT-RULES.md</code> ergänzt die Methode um die Regeln dieses Projekts.</li>
   <li>Die Factory ist nicht die App. Cloud-Agent auf dem <strong>App-Repo</strong>, nachdem die Kopien committet sind.</li>
 </ul>
 
 <h2>Was das System tun kann</h2>
 <ul>
-  <li><strong>DEFINE</strong> — noch kein Produkt-Code. Fragen und in <code>adb/</code> schreiben, bis ein frischer Agent daraus bauen kann. Dann: BUILD starten?</li>
+  <li><strong>DEFINE</strong> — noch kein Produkt-Code. Verhalten und Freigabe in <code>adb/</code> festhalten. Bereits erteilte Freigaben werden übernommen; gefragt wird nur nach offenen Entscheidungen.</li>
   <li><strong>BUILD</strong> — eine Scheibe laut <code>adb/</code> bauen, auf dem echten Weg prüfen, Dateien nachziehen.</li>
   <li>In deiner Sprache sprechen. Sich anmelden, Browser prüfen, committen.</li>
   <li>Offene Probleme nicht ewig „fast fertig“ lassen.</li>
@@ -52,7 +52,7 @@
 
 <h2>Befehle (in dieser App)</h2>
 <ul>
-  <li><code>/start</code> — Sprache, Ton, klein/groß nochmal</li>
+  <li><code>/start</code> — Sprache, Ton oder Methode ändern</li>
   <li><code>/adb</code> — Einstieg: DEFINE, Status, Scheibe, …</li>
   <li><code>/adb-define</code> — Ziel in Dateien schreiben</li>
   <li><code>/adb-slice</code> — eine Scheibe bauen und prüfen</li>
@@ -80,5 +80,6 @@
 <h2>Weiter</h2>
 <p>Wenn <code>adb/</code> noch fehlt: sag „DEFINE starten“ oder <code>/adb-define</code>. Wenn DEFINE schon da ist: die nächste Scheibe, oder Status.</p>
 <p>Factory-Update: Factory <code>git pull</code>, in der App Setup <code>--refresh</code>. <code>OWNER.md</code> bleibt bis zum nächsten Start. <code>adb/</code> ist dein Produkt, nicht die Factory.</p>
+<p>Projektspezifische Regeln stehen in <code>PROJECT-RULES.md</code>. Ein Refresh erhält diese Regeln, deine Einstellungen und die Produktdokumente. Ein verletztes oder ungeprüftes Pflichtverhalten bedeutet Nacharbeit. Der Agent nennt das Ergebnis knapp und macht die Nachweise zugänglich.</p>
 </body>
 </html>

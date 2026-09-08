@@ -4,14 +4,14 @@
 # Does, idempotently:
 #   1. Copy factory AGENTS.md into the project as AGENTS.md (always) and stamp METHOD-VERSION
 #   2. Write harness pointers CLAUDE.md, GEMINI.md, .github/copilot-instructions.md
-#      as only `@AGENTS.md` (always; --refresh overwrites content drift)
+#      as reference-only entries (foreign content blocks before any write)
 #   3. Copy Rules/skills/start/SKILL.md as START.md and install /start (always)
 #   4. Unless --plain: METHOD.md = METHOD: ADB; copy SKILL.md as ADB.md;
 #      install /adb commands. Writes a new METHOD.md. Does not switch an
-#      existing PLAIN/ADB line unless --switch (Start small↔large / risk=yes).
+#      existing PLAIN/ADB line unless --switch (Start method choice / risk=yes).
 #   5. --plain: METHOD.md = METHOD: PLAIN; remove ADB.md and /adb commands.
 #      Product adb/ docs stay. Existing ADB line: same rule as (4) — need --switch.
-#   6. Remove stray engine folders that are not this method
+#   6. Preserve unrelated methods and project-owned files
 #   7. Optionally ensure adb/08-OPEN-ISSUES.md (--register only; ADB mode)
 #   8. --refresh: overwrite AGENTS.md, START.md, harness pointers and (unless PLAIN) ADB.md from factory; reinstall commands
 #   9. Write .gitattributes (* text=auto eol=lf; *.bat and *.cmd CRLF) when none exists — never overwrite;
@@ -73,13 +73,18 @@ grep -q 'MainAgent' "$AGENTS_SRC" || { echo "AGENTS.md source is not the product
 
 PROJECT="$(cd "$PROJECT" && pwd -P)"
 
+if [ -f "$PROJECT/Methods/ADB/SKILL.md" ] && [ -f "$PROJECT/Rules/start-into-project.sh" ]; then
+  echo "refusing: target is the method factory, not an app" >&2
+  exit 1
+fi
+
 # A working tree inside a two-way sync client gets [conflicted] copies and edits without commits.
 if printf '%s' "$PROJECT" | grep -qiE 'pcloud|dropbox|onedrive|google ?drive|icloud|com~apple~clouddocs|syncthing'; then
   echo "WARN: $PROJECT sits inside a cloud-sync folder." >&2
   echo "WARN: a Git working tree in a two-way sync client gets [conflicted] copies and changes without commits. Keep the checkout outside the sync folder; the remote is the sync." >&2
 fi
 sha="$(git -C "$SYSTEM_ROOT" rev-parse --short HEAD 2>/dev/null || echo unknown)"
-if ! git -C "$SYSTEM_ROOT" diff HEAD --quiet -- Methods/ADB/SKILL.md AGENTS.md 2>/dev/null; then
+if ! git -C "$SYSTEM_ROOT" diff HEAD --quiet -- Methods Rules AGENTS.md 2>/dev/null; then
   sha="${sha}-dirty"
 fi
 day="$(date +%Y-%m-%d)"
@@ -110,10 +115,10 @@ strip_stamp() {
 remove_stamp_above_frontmatter() {
   local file="$1"
   local tmp first second
-  tmp="$(mktemp)"
   first="$(head -1 "$file" 2>/dev/null || true)"
   second="$(sed -n '2p' "$file" 2>/dev/null || true)"
   if [[ "$first" =~ ^METHOD-VERSION: ]] && [ "$second" = "---" ]; then
+    tmp="$(mktemp)"
     tail -n +2 "$file" > "$tmp"
     mv "$tmp" "$file"
     return 0
@@ -241,6 +246,67 @@ sync_stamped_copy() {
   fi
 }
 
+# Check conflicts before the first project mutation.
+conflict() {
+  echo "CONFLICT: $1. Resolve explicitly before retrying; setup changed no project files." >&2
+  exit 1
+}
+known_copy() {
+  local dest="$1" src="$2" rel="$3" blob
+  if [ -f "$src" ] && cmp -s <(sed 's/\r$//' "$dest") <(sed 's/\r$//' "$src"); then return 0; fi
+  blob="$(sed 's/\r$//' "$dest" | git hash-object --stdin)"
+  git -C "$SYSTEM_ROOT" rev-list --objects --all -- "$rel" 2>/dev/null | grep -Fx "$blob $rel" >/dev/null
+}
+for rel in .claude .claude/commands .codex .codex/prompts .cursor .cursor/commands .github; do
+  dest="$PROJECT/$rel"
+  [ ! -L "$dest" ] || conflict "symlinked harness directory at $dest"
+  [ ! -e "$dest" ] || [ -d "$dest" ] || conflict "non-directory at $dest"
+done
+for rel in AGENTS.md START.md ADB.md METHOD.md CLAUDE.md GEMINI.md .github/copilot-instructions.md; do
+  dest="$PROJECT/$rel"
+  [ ! -L "$dest" ] || conflict "symlink at $dest"
+  [ ! -e "$dest" ] || [ -f "$dest" ] || conflict "non-file at $dest"
+done
+for rel in CLAUDE.md GEMINI.md .github/copilot-instructions.md; do
+  dest="$PROJECT/$rel"
+  [ -f "$dest" ] || continue
+  have="$(tr -d '\r\n' < "$dest")"
+  [ "$have" = '@AGENTS.md' ] && continue
+  [ "$rel" = '.github/copilot-instructions.md' ] && [ "$have" = 'Read and follow [AGENTS.md](../AGENTS.md).' ] && continue
+  conflict "foreign harness instructions at $dest; retain them in PROJECT-RULES.md before replacing this entry"
+done
+for rel in AGENTS.md START.md ADB.md; do
+  dest="$PROJECT/$rel"
+  [ -f "$dest" ] || continue
+  case "$rel" in AGENTS.md) src="$AGENTS_SRC";; START.md) src="$START_SKILL";; ADB.md) src="$SKILL";; esac
+  grep -q '^METHOD-VERSION:' "$dest" || cmp -s "$dest" "$src" || conflict "unmanaged rules at $dest"
+done
+for sub in .cursor/commands .claude/commands .codex/prompts; do
+  dest="$PROJECT/$sub/start.md"
+  if [ -e "$dest" ] || [ -L "$dest" ]; then
+    [ ! -L "$dest" ] && known_copy "$dest" "$START_CMD" Rules/commands/start.md || conflict "foreign start command at $dest"
+  fi
+done
+(cd "$PROJECT" && "$INSTALLER" --copy --check) >/dev/null
+hooks_dir="$(git -C "$PROJECT" rev-parse --git-path hooks 2>/dev/null || true)"
+if [ -n "$hooks_dir" ]; then
+  case "$hooks_dir" in /*|[A-Za-z]:/*) ;; *) hooks_dir="$PROJECT/$hooks_dir";; esac
+  [ ! -L "$hooks_dir" ] || conflict "symlinked hooks directory at $hooks_dir"
+  python3 - "$PROJECT" "$hooks_dir" <<'PY' || conflict "hooks directory is outside this project: $hooks_dir"
+import os, sys
+project, hooks = map(os.path.realpath, sys.argv[1:])
+try:
+    contained = os.path.commonpath([project, hooks]) == project
+except ValueError:
+    contained = False
+sys.exit(0 if contained else 1)
+PY
+  hook="$hooks_dir/pre-commit"
+  if [ -f "$SYSTEM_ROOT/Rules/hooks/pre-commit" ] && { [ -e "$hook" ] || [ -L "$hook" ]; }; then
+    [ ! -L "$hook" ] && [ -f "$hook" ] && known_copy "$hook" "$SYSTEM_ROOT/Rules/hooks/pre-commit" Rules/hooks/pre-commit || conflict "foreign or customized pre-commit hook at $hook (keep active and integrate explicitly)"
+  fi
+fi
+
 # --- METHOD.md ---
 # Flags are the requested method on first write. An existing PLAIN/ADB line
 # changes only with --switch (Start). setup-without-interview does not write
@@ -259,9 +325,9 @@ fi
 
 existing_method=""
 if [ -f "$method_md" ]; then
-  if grep -qx 'METHOD: PLAIN' "$method_md" 2>/dev/null; then
+  if sed 's/\r$//' "$method_md" | grep -qx 'METHOD: PLAIN'; then
     existing_method='METHOD: PLAIN'
-  elif grep -qx 'METHOD: ADB' "$method_md" 2>/dev/null; then
+  elif sed 's/\r$//' "$method_md" | grep -qx 'METHOD: ADB'; then
     existing_method='METHOD: ADB'
   fi
 fi
@@ -273,7 +339,7 @@ if [ $SWITCH -eq 1 ] || [ -z "$existing_method" ]; then
     else
       write_method_line "$desired_method"
     fi
-  elif grep -qx "$desired_method" "$method_md" 2>/dev/null; then
+  elif sed 's/\r$//' "$method_md" | grep -qx "$desired_method"; then
     :
   else
     if [ $CHECK -eq 1 ]; then
@@ -309,21 +375,11 @@ remove_adb_method_artifacts() {
       note_changed "ADB.md"
     fi
   fi
-  local sub
-  for sub in .cursor/commands .claude/commands .codex/prompts; do
-    [ -d "$PROJECT/$sub" ] || continue
-    shopt -s nullglob
-    for path in "$PROJECT/$sub"/adb.md "$PROJECT/$sub"/adb-*.md "$PROJECT/$sub"/adb-*.md.pre-adb.*; do
-      rel="${path#"$PROJECT"/}"
-      if [ $CHECK -eq 1 ]; then
-        echo "WOULD REMOVE leftover $path"
-      else
-        rm -f "$path"
-        note_changed "$rel"
-      fi
-    done
-    shopt -u nullglob
-  done
+  if [ $CHECK -eq 1 ]; then
+    (cd "$PROJECT" && "$INSTALLER" --remove --check)
+  else
+    (cd "$PROJECT" && "$INSTALLER" --remove)
+  fi
 }
 
 if [ $PLAIN -eq 1 ]; then
@@ -340,6 +396,7 @@ ensure_agents_pointer() {
   local dest="$PROJECT/$rel"
   # Compare without trailing newlines — $(...) strips them and would always look stale.
   local want='@AGENTS.md'
+  [ "$rel" != '.github/copilot-instructions.md' ] || want='Read and follow [AGENTS.md](../AGENTS.md).'
   local parent have
   parent="$(dirname "$dest")"
   have=""
@@ -377,56 +434,7 @@ if [ $PLAIN -eq 0 ]; then
   STALE_ADB=$SYNC_STALE
 fi
 
-# --- Stray engine folders that are not this method. Product docs stay. ---
-remove_stray_path() {
-  local rel="$1"
-  local path="$PROJECT/$rel"
-  if [ ! -e "$path" ] && [ ! -L "$path" ]; then
-    return 0
-  fi
-  if [ $CHECK -eq 1 ]; then
-    echo "WOULD REMOVE leftover $path"
-    return 0
-  fi
-  rm -rf "$path"
-  note_changed "$rel"
-}
-
-is_stray_core_config() {
-  local f="$1"
-  [ -f "$f" ] || return 1
-  grep -qiE 'bmad-core|markdownExploder|prdFile|bmad_version|bmad-method|_bmad/' "$f"
-}
-
-for rel in _bmad .bmad bmad-agent bmad.config.yaml bmad-config.yaml bmad.config.js; do
-  remove_stray_path "$rel"
-done
-
-shopt -s nullglob
-for path in "$PROJECT"/.bmad-*; do
-  remove_stray_path "${path#"$PROJECT"/}"
-done
-shopt -u nullglob
-
-harness_cmd_roots=(
-  ".cursor/commands"
-  ".claude/commands"
-  ".codex/prompts"
-  ".cursor/rules"
-  ".cursor/skills"
-  ".claude/skills"
-  ".codex/skills"
-)
-for root in "${harness_cmd_roots[@]}"; do
-  [ -d "$PROJECT/$root" ] || continue
-  while IFS= read -r -d '' path; do
-    remove_stray_path "${path#"$PROJECT"/}"
-  done < <(find "$PROJECT/$root" -maxdepth 1 \( -iname '*bmad*' \) -print0)
-done
-
-if is_stray_core_config "$PROJECT/core-config.yaml"; then
-  remove_stray_path "core-config.yaml"
-fi
+# Unrelated methods and project-owned files are preserved.
 
 # --- Issue register (optional, ADB mode) ---
 register="$PROJECT/adb/08-OPEN-ISSUES.md"
@@ -493,7 +501,7 @@ elif [ $STALE_ADB -eq 1 ]; then
   echo "STALE: skipping slash commands — current commands would cite a method this ADB.md does not have."
   echo "STALE: run with --refresh to update both together."
 elif [ $CHECK -eq 1 ]; then
-  (cd "$PROJECT" && "$INSTALLER" --copy --check) || true
+  (cd "$PROJECT" && "$INSTALLER" --copy --check)
 else
   before_paths="$(list_cmd_links)"
   before_targets="$(list_cmd_link_targets)"
@@ -564,14 +572,6 @@ install_hooks() {
     if [ -f "$dest" ] && cmp -s <(sed 's/\r$//' "$src") "$dest"; then
       continue
     fi
-    if [ -f "$dest" ] && ! grep -q '^# Method hook' "$dest"; then
-      if [ $CHECK -eq 1 ]; then
-        echo "WOULD BACK UP foreign hook $dest to $dest.pre-method"
-      else
-        mv "$dest" "$dest.pre-method"
-        echo "WARN: existing $name hook moved to $dest.pre-method — merge it by hand if it matters." >&2
-      fi
-    fi
     if [ $CHECK -eq 1 ]; then
       echo "WOULD INSTALL $dest"
       continue
@@ -581,7 +581,7 @@ install_hooks() {
     chmod +x "$dest"
     note_changed "git hook $name"
   done
-  # A method hook the factory no longer ships (header says so) must not keep enforcing a dropped rule. Foreign hooks stay.
+  # Remove only exact historical method hooks. A marker does not establish ownership.
   local stale
   for stale in "$hooks_dir"/*; do
     [ -f "$stale" ] || continue
@@ -589,6 +589,10 @@ install_hooks() {
     case "$name" in *.sample|*.pre-method) continue ;; esac
     [ -f "$HOOKS_SRC/$name" ] && continue
     grep -q '^# Method hook' "$stale" || continue
+    if [ -L "$stale" ] || ! known_copy "$stale" "$HOOKS_SRC/$name" "Rules/hooks/$name"; then
+      echo "WARN: preserved unrecognized or customized retired hook $stale; review it explicitly." >&2
+      continue
+    fi
     if [ $CHECK -eq 1 ]; then
       echo "WOULD REMOVE stale method hook $stale"
       [ -f "$stale.pre-method" ] && echo "WOULD RESTORE $stale.pre-method"
@@ -631,8 +635,8 @@ if [ $CHECK -eq 0 ]; then
     exit 1
   fi
   if [ ! -f "$PROJECT/OWNER.md" ]; then
-    echo "WARN: no OWNER.md — Start was not run; the owner was not asked language." >&2
-    echo "WARN: when the owner is in chat, run Start (Q1 language). Do not treat this setup as a finished first run." >&2
+    echo "WARN: no OWNER.md — communication settings have not been recorded." >&2
+    echo "WARN: follow Start, reuse known answers and collect only missing settings before calling first-run setup complete." >&2
   fi
 fi
 

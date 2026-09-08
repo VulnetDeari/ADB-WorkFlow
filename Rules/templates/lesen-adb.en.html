@@ -19,7 +19,7 @@
 </div>
 
 <h1>Large method — Ask. Decide. Build.</h1>
-<p>Start set this app to <strong>ADB</strong>. You know where the product must land. You are not the coder, not the tester, not the one who signs into every site. You talk only to <strong>MainAgent</strong>. On ADB, MainAgent <em>must</em> start subagents <strong>PlanAgent</strong>, <strong>CodeAgent</strong>, and <strong>ReviewAgent</strong> — not extra chats for you. PlanAgent writes the destination into files. CodeAgent builds in slices and proves it.</p>
+<p>You talk to <strong>MainAgent</strong>. Small, clear, low-risk work can be implemented and checked in the same chat. Separate planning, building or review is used when the actual change needs it. First, the agent presents the intended product behavior and records your approval or delegated choices. Selecting ADB alone does not approve a product specification.</p>
 <div class="box">
 <strong>Product:</strong> {{PRODUCT}}<br>
 <strong>Language:</strong> {{LANGUAGE}} · <strong>Address:</strong> {{ADDRESS}} · <strong>Tone:</strong> {{TONE}}<br>
@@ -29,22 +29,22 @@
 <h2>What you do</h2>
 <ul>
   <li>Intent, priority, trade-offs. Not repo trivia the system can read.</li>
-  <li>Choose only when two different products or scopes are possible: chips when clickable, else A/B/C; last = “decide for me”.</li>
+  <li>Choose only when two different products or scopes are possible: chips when clickable, else A/B/C; “decide for me” only for decisions you can delegate.</li>
   <li>Only you: 2FA, captcha, passkey, blocked keys.</li>
   <li>Live only if you ask. After a finished slice the system commits.</li>
-  <li>Language or tone: <code>/start</code> again. Same options.</li>
+  <li>Language or tone: <code>/start</code> again. Known answers are reused; only missing or changed settings are requested.</li>
 </ul>
 
 <h2>What you do not do</h2>
 <ul>
   <li>Do not code, no click tour, no passwords in chat.</li>
-  <li>No extra process files. In this folder, only this method’s files apply.</li>
+  <li>No extra rule copies per agent. <code>PROJECT-RULES.md</code> supplements the method with this project's rules.</li>
   <li>The factory is not the app. Cloud Agent on the <strong>app repo</strong> after the copies are committed.</li>
 </ul>
 
 <h2>What the system can do</h2>
 <ul>
-  <li><strong>DEFINE</strong> — no product code yet. Ask and write <code>adb/</code> until a fresh agent can build from the files. Then: start BUILD?</li>
+  <li><strong>DEFINE</strong> — no product code yet. Record behavior and scope approval in <code>adb/</code>. Existing approvals are reused; only unresolved decisions need questions.</li>
   <li><strong>BUILD</strong> — one slice as <code>adb/</code> requires, prove on a real path, update files.</li>
   <li>Speak your language. Sign in, browser-check, commit.</li>
   <li>Do not leave open issues “almost done” forever.</li>
@@ -52,7 +52,7 @@
 
 <h2>Commands (in this app)</h2>
 <ul>
-  <li><code>/start</code> — language, tone, small/large again</li>
+  <li><code>/start</code> — change language, tone or method</li>
   <li><code>/adb</code> — entry: DEFINE, status, slice, …</li>
   <li><code>/adb-define</code> — write the destination into files</li>
   <li><code>/adb-slice</code> — build and prove one slice</li>
@@ -80,5 +80,6 @@
 <h2>What you can do next</h2>
 <p>If <code>adb/</code> is missing: say “start DEFINE” or <code>/adb-define</code>. If DEFINE is already there: the next slice, or status.</p>
 <p>Factory update: <code>git pull</code> in the factory, setup <code>--refresh</code> in the app. <code>OWNER.md</code> stays until the next Start. <code>adb/</code> is your product, not the factory.</p>
+<p>Project-specific rules live in <code>PROJECT-RULES.md</code>. Refresh preserves these rules, your settings and product documents. A mandatory requirement that fails or remains unverified means the task needs more work. The agent provides a concise result with accessible evidence.</p>
 </body>
 </html>

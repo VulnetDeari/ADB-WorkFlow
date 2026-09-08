@@ -2,13 +2,13 @@
 # ADB — install slash commands into THIS project, never into the user home.
 #
 # Canonical files live in commands/. Each project harness directory gets a
-# symlink (or a copy with --copy). That keeps one source of truth and keeps
+# copy containing a reference to the canonical method. This keeps
 # /adb-* out of unrelated projects (P1).
 #
 # Usage:
 #   ./install-commands.sh                 install into the current directory
 #   ./install-commands.sh --check         report only
-#   ./install-commands.sh --copy          copy instead of symlink
+#   ./install-commands.sh --copy          explicitly select the default copy mode
 #   ./install-commands.sh --remove        remove from the current directory
 #   ./install-commands.sh --remove-global remove leftover home-level installs
 #
@@ -31,7 +31,7 @@ GLOBAL_DIRS=(
   "$HOME/.cursor/commands"
 )
 
-MODE="link"
+MODE="copy"
 ACTION="install"
 CHECK=0
 ROOT="$PWD"
@@ -67,9 +67,6 @@ is_ours() {
   if [ ! -e "$dst" ] && [ ! -L "$dst" ]; then
     return 1
   fi
-  if cmp -s "$src" "$dst" 2>/dev/null; then
-    return 0
-  fi
   if [ -L "$dst" ]; then
     local target want dst_dir
     target="$(readlink "$dst")"
@@ -77,7 +74,17 @@ is_ours() {
     want="$(link_target_for "$src" "$dst_dir")"
     [ "$target" = "$want" ] && return 0
     [ "$target" = "$src" ] && return 0
-    [ "$target" = "../../commands/$(basename "$src")" ] && return 0
+    return 1
+  fi
+  [ -f "$dst" ] || return 1
+  if cmp -s <(sed 's/\r$//' "$src") <(sed 's/\r$//' "$dst"); then
+    return 0
+  fi
+  # Match historical content with LF normalization, including CRLF project checkouts.
+  local blob rel="Methods/ADB/commands/$(basename "$src")"
+  blob="$(sed 's/\r$//' "$dst" | git hash-object --stdin)"
+  if git -C "$ADB_ROOT" rev-list --objects --all -- ":(top)$rel" 2>/dev/null | grep -Fx "$blob $rel" >/dev/null; then
+    return 0
   fi
   return 1
 }
@@ -101,17 +108,6 @@ remove_ours_from() {
         n=$((n + 1))
       fi
     fi
-  done
-  local backup
-  for backup in "$dir"/adb-*.md.pre-adb.*; do
-    [ -e "$backup" ] || continue
-    if [ $CHECK -eq 1 ]; then
-      echo "WOULD REMOVE $backup" >&2
-    else
-      rm -f "$backup"
-      echo "removed $backup" >&2
-    fi
-    n=$((n + 1))
   done
   echo "$n"
 }
@@ -140,6 +136,15 @@ if [ "$ACTION" = "remove-global" ]; then
   exit 0
 fi
 
+# Standalone use has the same project boundary as setup, including removal.
+for sub in .claude .claude/commands .codex .codex/prompts .cursor .cursor/commands; do
+  dir="$ROOT/$sub"
+  if [ -L "$dir" ] || { [ -e "$dir" ] && [ ! -d "$dir" ]; }; then
+    echo "CONFLICT: symlinked or non-directory harness path $dir; left intact." >&2
+    exit 1
+  fi
+done
+
 if [ "$ACTION" = "remove" ]; then
   for sub in "${PROJECT_SUBDIRS[@]}"; do
     n="$(remove_ours_from "$ROOT/$sub")"
@@ -157,6 +162,19 @@ fi
 echo "mode:    $MODE"
 echo
 
+# Preflight every destination before any installation writes.
+for sub in "${PROJECT_SUBDIRS[@]}"; do
+  for src in "${FILES[@]}"; do
+    dst="$ROOT/$sub/$(basename "$src")"
+    if [ -e "$dst" ] || [ -L "$dst" ]; then
+      if ! is_ours "$dst" "$src"; then
+        echo "CONFLICT: foreign command $dst; left intact. Resolve explicitly before installing." >&2
+        exit 1
+      fi
+    fi
+  done
+done
+
 for sub in "${PROJECT_SUBDIRS[@]}"; do
   dir="$ROOT/$sub"
   harness="$(echo "$sub" | cut -d/ -f1)"
@@ -173,7 +191,8 @@ for sub in "${PROJECT_SUBDIRS[@]}"; do
   for src in "${FILES[@]}"; do
     name="$(basename "$src")"
     dst="$dir/$name"
-    want="$(link_target_for "$src" "$dir")"
+    want=""
+    [ "$MODE" != link ] || want="$(link_target_for "$src" "$dir")"
 
     if [ "$MODE" = "link" ] && [ -L "$dst" ] && [ "$(readlink "$dst")" = "$want" ]; then
       continue
@@ -186,12 +205,6 @@ for sub in "${PROJECT_SUBDIRS[@]}"; do
       echo "$harness/$name: WOULD UPDATE"
       changed=$((changed + 1))
       continue
-    fi
-
-    if [ -f "$dst" ] && [ ! -L "$dst" ] && ! cmp -s "$src" "$dst"; then
-      backup="$dst.pre-adb.$(date +%Y%m%d%H%M%S)"
-      mv "$dst" "$backup"
-      echo "$harness/$name: existing file kept as $(basename "$backup")"
     fi
 
     rm -f "$dst"

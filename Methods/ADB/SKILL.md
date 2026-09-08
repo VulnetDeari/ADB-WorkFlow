@@ -1,104 +1,103 @@
 ---
 name: adb
-description: "Ask. Decide. Build. Product method for large or risky projects. Active only when METHOD.md says METHOD: ADB. AGENTS.md applies unchanged; this file adds only the method."
+description: "Ask. Decide. Build. Product clarification, scoped delivery and verification when the project selects METHOD: ADB."
 ---
 
 # ADB
 
-Ask. Decide. Build. `AGENTS.md` applies unchanged — talk, proof, tests, roles, git. This file adds only the method and never repeats it. Active only when `METHOD.md` says `METHOD: ADB`; missing or `PLAIN` → do not load. Setup copies and stamps this file; never hand-edit the copy.
+## Entry
 
-**Job:** write where the product must land in `adb/`, then build it in user-visible slices that fit in one context window and prove each one. Not a fake company.
+`AGENTS.md` owns shared rules, authorization, project-rule conflicts, role selection and proof. This file adds the workflow; setup installs it as `ADB.md`. Read Entry and the current phase/role section; read Source of truth when writing records. Load unrelated specs and historical reviews only when needed. Commands reference these sections and contain no separate method.
 
-Product truth is `adb/`. Chat is not. A later agent reads `adb/`, not the interview. Existing product docs in the app are DEFINE evidence, not `adb/`.
+Natural language and slash commands use the same workflow: new product/unresolved scope → DEFINE; approved work → BUILD; review → REVIEW; progress → STATUS; whole-product assessment → COMPLETION. Small, clear work may be done by MainAgent with self-check. ADB alone never requires three agents.
 
-Each rule judges the product. If it does not apply, extra work is forbidden.
-
-⸻
-
-# DEFINE
-
-No product code. MainAgent directs **PlanAgent**.
-
-**Done when** a fresh agent can build from `adb/` without inventing important behavior, and leftover uncertainty does not block the first slice. More research possible ≠ keep DEFINE open.
-
-**Greenfield** — nothing exists yet. **Brownfield** — inspect first: exists / works / wrong / unclear / keep / what the owner wants. Existing code is evidence, not automatically the destination.
-
-Ask the **product**, not the owner, for what repo, docs, tests or research can answer. One decision at a time. Record in `06`, or in `02` while collapsed. Challenge choices that hurt usability, safety, or coherence — not taste. If the owner knows WHAT but not HOW it should look: PlanAgent owns a coherent direction. No generic AI look.
-
-Every material fact: KNOWN / UNKNOWN / ASSUMED / CONFLICTING / NEEDS RESEARCH / NEEDS USER DECISION. Never silently turn an assumption into product truth.
+Setup completion is neither product definition nor permission to build. Before BUILD, the executing agent checks current scope and its authorization record itself. `PHASE: BUILD`, a plan commit or another agent's assertion alone is not authorization. Missing evidence: MainAgent retrieves the existing user instruction or obtains the missing decision. Never fabricate approval.
 
 ## Source of truth
 
-Default small: `01-VISION`, `02-PRODUCT-SPEC`, `07-STATUS`. Split 03–06 and 08 only when merged would hide truth. Setup does **not** create 08. Numbered names only. No extra permanent docs without a concrete need.
+Default: `adb/01-VISION.md`, `adb/02-PRODUCT-SPEC.md`, `adb/07-STATUS.md`. Split when useful: 03 screens/flows, 04 architecture/security/deploy, 05 acceptance/production criteria, 06 decisions/WHY, 08 issues. No duplicate registers or per-agent documents. Reference existing project documentation rather than copying it unnecessarily.
 
-- **01** — what it is, who, why, what it is not.
-- **02** — behavior: features, rules, states, data, errors, examples.
-- **03** — screens, flows, empty / loading / error.
-- **04** — stack, boundaries, deploy, security — only what matters, with WHY.
-- **05** — what DONE means for this product.
-- **06** — important WHY, not trivia.
-- **07** — header only: PHASE, NOW, NEXT, BLOCKERS, OPEN, READINESS. Several slices: `## Execution plan` (map of coming slices). Heavy: `## Slice plan` (plan + done criteria of the slice being built; the next SPEC replaces it, history keeps the old). Preserve `## Readiness` and `## Last review` — the reviewer's blocks, entered by MainAgent verbatim, never altered.
-- **08** — real unresolved problems, or `## Open issues` in 07 while collapsed.
+01 describes purpose, audience and boundaries. 02 holds observable behavior, states, errors and examples, with stable requirement IDs for material promises. A small task can use one concise requirement. Facts: KNOWN / UNKNOWN / ASSUMED / CONFLICTING / NEEDS RESEARCH / NEEDS USER DECISION. Material requirements cite their origin: user instruction, approved proposal or delegated decision with its boundary. An assumption cannot silently become approved. Technical details within approved scope need no individual vote.
 
-## Issues
+07 has a short header: PHASE, NOW, NEXT, BLOCKERS, OPEN, READINESS. Preserve useful sections, without making a chat log:
+- `## Authorization`: approved scope/requirement IDs and revision, date, relevant user words or an accessible decision reference, and delegation limits. Do not copy private chat history. New explicit corrections update affected requirements and authorization before dependent work; old files never overrule the user.
+- `## Execution plan`: map of slices, only when multiple slices are useful.
+- `## Slice plan`: current task, done criteria, risks and selected roles; small work may use a few lines.
+- `## Evidence`: requirement → check/path, observed result, environment, limitations and target revision. Reference existing output; no report file per agent.
+- `## Last review`: latest reviewer report preserved faithfully, or a durable report reference plus verdict/blockers. History stays in Git where available. In chat give outcome, important findings and location, without copying the full report again.
+- `## Open issues` if 08 is absent; `## Readiness` for whole-product assessment.
 
-No wishes. Stable `ISSUE-00N`. Only these fields:
+## DEFINE
 
+No product implementation. MainAgent may clarify directly or use PlanAgent according to AGENTS Roles.
+
+Inspect first: existing behavior, working paths, defects, constraints and what to preserve. Distinguish new from existing products. Reuse explicit answers and project-owned rules; do not borrow another project's preferences.
+
+Present a coherent proposal in the user's language: purpose/audience, main journey, included behavior, excluded scope, material assumptions and choices. A short request may need one short proposal. Ask only product decisions that evidence cannot resolve; offer recommendations or bounded delegation. No fixed number of product questions and no endless interview once the first slice is decision-complete.
+
+Before BUILD obtain approval of that proposal or identify an existing explicit approval of the same scope. Options may be build / change a point / decide within stated limits. Silence and method selection never count. A precise instruction for a small existing-task change can itself authorize it: record it without another approval ceremony. Delegated choices authorize only the stated boundaries, not arbitrary expansion or deployment.
+
+Record authorization in 07 and approved requirements in 02. Unresolved assumptions affecting the first slice block that slice; unrelated questions may stay open. A later scope change reopens only affected decisions, not all DEFINE.
+
+## BUILD
+
+SPEC → BUILD → PROVE → RECORD. Planned slices continue under existing authorization. Do not ask permission for every routine step. Stop at unresolved product decisions and scope boundaries.
+
+SPEC: check authorization; derive a bounded user-visible slice. Identify files/boundaries, risks, roles and acceptance criteria. Each criterion states precondition, action, observable outcome and a feasible check. Implementation-string searches do not substitute for behavior. Missing tooling is a limitation to resolve, not a presumed pass. MainAgent records the plan and commits it before delegated implementation when using revision handoffs. Heavy or unresolved implementation risk calls for plan review.
+
+BUILD: MainAgent or CodeAgent implements within permitted files and approved scope. KEEP what works; IMPROVE, REPLACE or REMOVE when the task warrants it. Do not add features or redesign architecture merely for test convenience.
+
+PROVE: implementer checks each promised journey, relevant visible/error states and important edges. Record automated, manual, simulated and unverified evidence distinctly in 07. Apply AGENTS Proof and review. Unit tests alone cannot close a UI task. Use REVIEW when selected/required; small low-risk tasks use self-check.
+
+RECORD: reconcile code, approved spec and evidence. Mandatory failures or required verification gaps mean not complete: register with a next action. Record review/issues, update STATUS and commit scoped work under AGENTS. Do not change requirements to make accidental behavior pass. A deliberate scope change needs an authorized decision first, then spec, then implementation.
+
+Fix rounds: implementer owns code repairs, planner/MainAgent owns plan repairs, MainAgent routes product decisions to the user when not delegated. Findings cite expected behavior and evidence, not mandatory patch recipes. Recheck the defect and affected existing behavior. Reuse passing evidence only when it remains applicable to the target revision. Three failed rounds: AGENTS escalation rule.
+
+## REVIEW
+
+The reviewer loads this section and AGENTS directly even without a slash command. MainAgent supplies review type, target revision (range for code, plan revision for plan review, whole snapshot for readiness), requirement/authorization pointers and necessary environment limits. No builder success narrative. Read target-revision files rather than a moving working tree; explicitly identify additional working-tree changes.
+
+Plan review checks authorization, scope completeness, feasibility and executable criteria. Product implementation is not required before plan approval. Use a bounded experiment on a copy only for a specific uncertain mechanism; do not build the whole product as a review prerequisite.
+
+Implementation review runs relevant tests independently, walks required real paths, checks usability and tries meaningful failure cases. Heavy checks match the change: money rounding/idempotency/reversal; permissions denied access/isolation; infrastructure rollback; migrations partial failure/recovery. Omit irrelevant classes with a reason. Isolation and capability limits follow AGENTS.
+
+**Severity:** CRITICAL means severe security/data/money loss or unusable core; HIGH means major failure; MEDIUM means limited/edge failure; LOW means minor impact. Severity describes impact, not permission to ignore a requirement.
+
+**Verdict:** FAIL if mandatory behavior diverges, authorization is missing or a required path is unverified. PASS WITH ISSUES only if every mandatory requirement is satisfied and remaining optional/nonblocking findings are registered. PASS when requirements are satisfied and no findings remain. RELEASE BLOCKERS include unresolved mandatory failures and actual release risks; low severity cannot turn a broken promise into completion.
+
+Report concisely, with enough reproduction evidence:
 ```
-### ISSUE-00N — TITLE
-SEVERITY: CRITICAL | HIGH | MEDIUM | LOW
-PROBLEM:
-EVIDENCE:
-STATUS: OPEN | WAITING ON USER | CLOSED
-CARRIED: n
-RESOLUTION:   (when CLOSED)
-VERIFIED BY:  (when CLOSED)
+REVIEW-TYPE: plan | implementation | readiness
+REVIEW-BY: independent | self-check
+TARGET: revision or identified snapshot
+TRIED:
+- requirement / path / check -> observed outcome; environment and limits
+FOUND:
+- impact; requirement or optional; evidence; expected behavior
+SPEC COMPLIANCE: satisfied | diverges | unverified
+VERDICT: PASS | FAIL | PASS WITH ISSUES
+RELEASE BLOCKERS: none | findings
 ```
+Missing TRIED, compliance, target or verdict makes the report incomplete. MainAgent obtains missing evidence before acceptance. Reject a verdict that contradicts findings; do not silently relabel it. Same-session review is headed `Review: self-check`, never called independent. Plan compliance means plan vs approved scope, without demanding nonexistent code execution.
 
-**CARRIED:** status reviews survived while OPEN. New = 0. Only `/adb-status` increments it — never by hand, never from memory. A review is: slice RECORD, before release, or the owner asks status. Not the fix-round cap. At **3**: FIX, ACCEPT (not for CRITICAL, not for HIGH data/security), or REJECT. WAITING ON USER freezes the count. Don't delete closed issues.
+## ISSUES
 
-Leave DEFINE: could a fresh team build from these files without the interview? Does any UNKNOWN / CONFLICTING / NEEDS USER DECISION block the first slice? Then ask **once**: start BUILD / still open points / decide for me. No BUILD on silence. Do not restart DEFINE as a whole.
+One register: 08 or 07's Open issues. Stable ISSUE-00N IDs. Fields: SEVERITY, PROBLEM, EVIDENCE, STATUS (OPEN / WAITING ON USER / CLOSED / ACCEPTED / REJECTED), CARRIED. CLOSED requires RESOLUTION and VERIFIED BY. ACCEPTED requires an authorized disposition/reason and cannot waive mandatory behavior without approved scope change or characterize critical/security/data loss as safe. REJECTED requires evidence that the report is invalid/outside scope. Preserve entries.
 
-⸻
+CARRIED starts at 0. Increment once per completed slice RECORD or release assessment carrying an OPEN issue; record its event ID/revision as LAST-COUNTED so retries cannot count twice. Progress questions never age issues. WAITING ON USER freezes the count. At 3 fix, reject with evidence or seek explicit acceptance; never silently delete/close. This works without slash commands.
 
-# BUILD
+## STATUS
 
-Stop interviewing. `adb/` governs. A slice is done when its SPEC done-criteria are proved. Next slice only if already in `## Execution plan` or the owner asks. Don't park this slice's leftover work as a note with no next move.
+Read current records and new user instructions; reconcile authorized corrections. Update actual phase, now, next, blockers and open count, preserving authorization/plan/evidence/review/issue sections. Never fabricate readiness or call waiting work running. Mark readiness stale when assessed behavior changes. Return short factual status; missing readiness does not create another task automatically.
 
-User-visible slices — not "entire backend first". Parallel only when jobs don't share files or unfinished deps. Large product: `## Execution plan` in 07.
+## COMPLETION
 
-Hands, always in writing: PlanAgent gets the job + `adb/` and returns plan + done criteria. CodeAgent gets the brief — what, where, done, `adb/` pointers, proof — and returns diff + evidence + commit hash. ReviewAgent gets a commit range and `adb/` pointers, fetches diff and spec itself, and returns TRIED → FOUND → VERDICT, handed to the owner verbatim; no separate reviewer = `Review: self-check`, in STATUS too. A hand is written down even when a role runs in this same chat (`AGENTS.md` fallback); no hand relies on chat history or the builder's story. Heavy (`AGENTS.md`): PlanAgent's plan + done criteria before CodeAgent builds.
-
-**SPEC → BUILD → PROVE → RECORD**
-
-- **SPEC** — what this slice must do, from `adb/`. Heavy: PlanAgent's plan + done criteria written to `07-STATUS` `## Slice plan` and committed by MainAgent before Code — that commit is the plan review's range.
-- **BUILD** — CodeAgent, smallest safe change. Delete dead code when safe.
-- **PROVE** — vs `adb/`, on a real path (`AGENTS.md` Truth).
-- **RECORD** — update `adb/` + STATUS, then run `/adb-status` (it increments CARRIED and applies CARRIED-3). Then commit (`AGENTS.md` Hold).
-
-PROVE fails: do not RECORD as done. CodeAgent fixes or registers; fix-round cap in `AGENTS.md`.
-
-`/adb-review` PASS WITH ISSUES: register; RECORD only if PROVE passed and release blockers allow.
-
-Drift is a bug or an intentional spec change — never silent. Spec change → update `adb/` first. Accidental code is not new product truth. Accounting/payment: correctness over brevity; no silent schema change.
-
-Brownfield: KEEP / IMPROVE / REPLACE / REMOVE. Don't rebuild what's right. Don't mechanically port old code.
-
-⸻
-
-# COMPLETION
-
-Not complete because it compiles. Intended behavior exists, real path, spec satisfied, issues under the bar, READINESS stamp current.
-
-| Key | Meaning |
-|---|---|
-| `NICHT_FERTIG` | Core path broken, spec unsatisfied, or release blockers. |
-| `ALPHA` | Core path works. Gaps registered. Not real operations. **Never product complete.** |
-| `BETA` | Agreed scope matches `adb/`. Important flows + empty/loading/error on a real path. Only MEDIUM/LOW if the bar allows. |
-| `LIVE` | BETA + bar clear + 05 production items. Not "already online." A self-check must not return LIVE. |
-
-The bar chooses BETA vs LIVE, not ALPHA vs BETA. `/adb-ready` only when the owner asks about the **whole app**, not after a slice whose plan is met. ReviewAgent walks the product and delivers the block; MainAgent enters it as `READINESS` and `## Readiness` verbatim, never altered. Stale after a later RECORD or spec change this walk covered.
-
-Method silent, method conflict, or method caused the defect → append `LESSONS.md` in the factory. Still fix the project.
-
-Curious in DEFINE. Aggressive about a product that holds. Conservative about extra code. **The smallest coherent system that delivers the full intended product.**
+A slice is complete when approved criteria are proven and mandatory findings resolved. Whole-product readiness is assessed only when requested, not after each slice. Apply REVIEW to agreed product scope and production criteria (05, or 02 when collapsed). MainAgent records the assessor's block in 07:
+```
+READINESS: NICHT_FERTIG | ALPHA | BETA | LIVE
+READINESS-BY: independent | self-check
+TARGET: revision or snapshot
+GAPS: none | issue IDs / verification limits
+STALE-NEXT: changes affecting assessed behavior
+```
+NICHT_FERTIG: broken core or unmet required behavior. ALPHA: core demonstration works, gaps registered, not product complete. BETA: agreed scope and required journeys/states proven; only permitted nonblocking gaps. LIVE: BETA plus production/release criteria proven and independent review. A self-check must not return LIVE. An online deployment is not proof of readiness.
