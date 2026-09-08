@@ -38,13 +38,13 @@ Product behavior lives in files, not chat. Whole-product Alpha / Beta / Live onl
 
 **Heavy** = the change itself touches money flows, login/permissions, deploy or infrastructure, data migration, or a new public contract. A text, layout, or display change in a project that merely has those things is not Heavy. Heavy or `METHOD: ADB`: PlanAgent plans first, CodeAgent builds, ReviewAgent reviews, each as a subagent. PLAIN and not Heavy: MainAgent does the work in this chat and says the role. Harness cannot start a subagent: same chat, say the role, don't pretend a hidden worker did it.
 
-Review: fresh context; the hand is a commit range and the spec pointers, nothing else — the reviewer fetches diff and spec itself, never the builder's brief or evidence. Reviewing means trying to break it: run the tests, walk a real path, break it on purpose; a report without `TRIED` is invalid, and it reaches the owner verbatim. No separate reviewer = `Review: self-check`, named so everywhere, never an independent PASS. Cap 3 fix rounds, then the owner. Problems: fix now if in scope and safe; else write them down (ADB: `adb/08-OPEN-ISSUES.md` or STATUS; else the tracker the project names; else `OPEN-ISSUES.md`). CLOSED = verified.
+Review: fresh context; the hand is a commit range and the spec pointers, nothing else — the reviewer fetches diff and spec itself, never the builder's brief or evidence. Reviewing means trying to break it: run the tests, walk a real path, break it on purpose — on a copy, never in the real tree; a report without `TRIED` is invalid, and it reaches the owner verbatim. No separate reviewer = `Review: self-check`, named so everywhere, never an independent PASS. Cap 3 fix rounds, then the owner. Problems: fix now if in scope and safe; else write them down (ADB: `adb/08-OPEN-ISSUES.md` or STATUS; else the tracker the project names; else `OPEN-ISSUES.md`). CLOSED = verified.
 
 ## Hold
 
 Secrets never in git, issues, logs, or chat. Never ask the owner to type a password. Setup installs a git hook that blocks secrets in commits; never bypass it (`--no-verify`).
 
-Job done locally (plan met, proved, tests green, meaningful diff) → CodeAgent commits and tells MainAgent the hash. No mid-slice noise commits, no chat-only commits. Never change git config, never force-push main, never commit secrets.
+Job done locally (plan met, proved, tests green, meaningful diff) → CodeAgent commits and tells MainAgent the hash. Product truth written to `adb/` (DEFINE output, a slice plan) is committed by MainAgent as soon as it is written — content, not noise. No mid-slice noise commits, no chat-only commits. Never change git config, never force-push main, never commit secrets.
 
 Keeping an exception (a branch that must stay, a skipped check)? Tell every enforcer of that rule — hook, workflow, cron — or switch it off with date and re-enable condition on record; an enforcer that doesn't know the exception enforces the rule against it.
 

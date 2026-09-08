@@ -30,15 +30,29 @@ fi
 if grep -rniE '\bbmad\b' --include='*.md' --include='*.html' .; then
   fail "method text still names a former method"
 fi
-if grep -qE 'Push Main|ALLOW_MAIN_PUSH|push only when' AGENTS.md README.md Methods/ADB/README.md Methods/ADB/SKILL.md Rules/skills/start/SKILL.md Methods/ADB/commands/*.md Rules/templates/*.html; then
-  fail "a push gate came back (L-039)"
-fi
-if grep -qE 'constrained-self-check|WALKED' Methods/ADB/SKILL.md Methods/ADB/commands/adb-ready.md Rules/skills/product-readiness/SKILL.md; then
-  fail "readiness still speaks its own review vocabulary (L-040)"
-fi
-grep -q 'CRITICAL' Methods/ADB/commands/adb-review.md || fail "adb-review has no severity scale"
-grep -q 'changes nothing in the repo' Methods/ADB/commands/adb-review.md || fail "adb-review lets the reviewer touch the real tree"
-grep -q 'plan commit' Methods/ADB/commands/adb-review.md || fail "adb-review plan review has no executable range"
+# Retired wording must not come back anywhere the method reads — whole factory, not a path list.
+# LESSONS.md is history and may quote it; this check names the words itself.
+retired() { grep -rlE "$1" . --exclude-dir=.git --exclude=LESSONS.md --exclude=check-factory.sh || true; }
+[ -z "$(retired 'Push Main|ALLOW_MAIN_PUSH|push only when')" ] || fail "a push gate came back (L-039): $(retired 'Push Main|ALLOW_MAIN_PUSH|push only when' | tr '\n' ' ')"
+[ -z "$(retired 'constrained-self-check|WALKED')" ] || fail "readiness still speaks its own review vocabulary (L-040): $(retired 'constrained-self-check|WALKED' | tr '\n' ' ')"
+[ -z "$(retired 'ReviewAgent writes|writes the READINESS|does not change the key')" ] || fail "a reviewer still writes into the real tree (L-048): $(retired 'ReviewAgent writes|writes the READINESS|does not change the key' | tr '\n' ' ')"
+[ -z "$(retired 'Execution plan`\) and committed|criteria into `adb/`, MainAgent')" ] || fail "the slice plan still lives in Execution plan (L-049)"
+# The review command must define its scale, thresholds, sandbox and plan range — the definitions, not a word somewhere.
+grep -q '^\*\*Severity:\*\* CRITICAL' Methods/ADB/commands/adb-review.md || fail "adb-review has no severity definition"
+grep -q '^\*\*Verdict:\*\* FAIL' Methods/ADB/commands/adb-review.md || fail "adb-review has no verdict definition"
+grep -q '^\*\*The reviewer changes nothing in the repo\.\*\*' Methods/ADB/commands/adb-review.md || fail "adb-review lets the reviewer touch the real tree"
+grep -q 'the range is the plan commit' Methods/ADB/commands/adb-review.md || fail "adb-review plan review has no executable range"
+grep -q 'Product truth written to `adb/`' AGENTS.md || fail "AGENTS.md does not cover the plan commit (L-049)"
+grep -q 'on a copy, never in the real tree' AGENTS.md || fail "AGENTS.md sandbox half-sentence missing (L-051)"
+# Harness copies inside the factory are real files identical to the canonical command (symlinks are stubs on Windows).
+for c in Methods/ADB/commands/adb*.md; do
+  for d in .claude/commands .codex/prompts .cursor/commands; do
+    cmp -s "$c" "Methods/ADB/$d/$(basename "$c")" || fail "factory harness copy drifted or is a stub: Methods/ADB/$d/$(basename "$c")"
+  done
+done
+for d in .claude/commands .codex/prompts .cursor/commands; do
+  cmp -s Rules/commands/start.md "$d/start.md" || fail "factory /start copy drifted or is a stub: $d/start.md"
+done
 grep -q 'This folder is the method factory' AGENTS.md && fail "root AGENTS.md is still the old pointer"
 
 if grep -q 'MainAgent' Rules/AGENTS.md 2>/dev/null; then
@@ -260,6 +274,18 @@ if git -C "$HOOK_APP" commit -q -m "obf2" 2>/dev/null; then
   fail "pre-commit did not block the _\$_ marker"
 fi
 git -C "$HOOK_APP" reset -q HEAD obf2.js; rm -f "$HOOK_APP/obf2.js"
+
+rep() { local n=$1 s="$2" i; for ((i=0;i<n;i++)); do printf '%s' "$s"; done; }
+hook_blocks() { local rel="$1" why="$2"; git -C "$HOOK_APP" add -f "$rel"; if git -C "$HOOK_APP" commit -q -m "probe" 2>/dev/null; then fail "pre-commit did not block $why"; fi; git -C "$HOOK_APP" reset -q HEAD "$rel"; rm -f "$HOOK_APP/$rel"; }
+hook_passes() { local rel="$1" why="$2"; git -C "$HOOK_APP" add -f "$rel"; git -C "$HOOK_APP" commit -q -m "honest" || fail "pre-commit blocked $why"; }
+{ printf 'x'; rep 250 $'\xe2\x80\x8b'; printf '//y\n'; } > "$HOOK_APP/zwsp.js"; hook_blocks zwsp.js "250 zero-width spaces"
+{ printf 'x'; rep 250 $'\v'; printf '//y\n'; } > "$HOOK_APP/vt.js"; hook_blocks vt.js "250 vertical tabs"
+{ printf 'x'; rep 250 $'\xc2\xa0'; printf '//y\n'; } > "$HOOK_APP/nbsp.js"; hook_blocks nbsp.js "250 no-break spaces"
+printf 'evil();\rharmless comment\n' > "$HOOK_APP/crtrick.js"; hook_blocks crtrick.js "a mid-line CR overwrite"
+mkdir -p "$HOOK_APP/src/build"; printf 'var _0x%s = 1;\n' 'a1b2c3' > "$HOOK_APP/src/build/evil.js"; hook_blocks src/build/evil.js "an obfuscated name under a nested build/"
+printf '*.raw -text\n' >> "$HOOK_APP/.gitattributes"   # keep the CR in the index: .gitattributes would normalize it away before the hook ever sees it
+printf 'crlf line\r\n' > "$HOOK_APP/crlf.raw"; hook_passes crlf.raw "a CRLF line ending (CR at end of line)"
+mkdir -p "$HOOK_APP/docs"; printf 'The hook blocks names like _0x%s.\n' 'deadbeef' > "$HOOK_APP/docs/security.md"; hook_passes docs/security.md "documentation that names the marker"
 
 mkdir -p "$HOOK_APP/dist" "$HOOK_APP/tests"
 printf 'var _0x%s = 1;

@@ -27,7 +27,7 @@ Without the interview (no language question — not a finished first run if the 
 
 Slash commands (`/adb`, `/adb-define`, `/adb-slice`, `/adb-review`, `/adb-status`, `/adb-triage`, `/adb-ready`) live in [`commands/`](commands/). They point at the project’s `ADB.md`.
 
-Inside this repository, `.cursor/commands/`, `.claude/commands/` and `.codex/prompts/` are **symlinks** into `commands/`. There is one copy to edit.
+Inside this repository, `.cursor/commands/`, `.claude/commands/` and `.codex/prompts/` hold **copies** of `commands/` (symlinks were 28-byte stubs on Windows). Edit `commands/`, then run `./install-commands.sh --copy` here; `check-factory.sh` fails when a copy drifts.
 
 ```text
 ./install-commands.sh                 # install into the current directory

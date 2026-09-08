@@ -365,7 +365,7 @@ DATE: 2026-09-08
 SYMPTOM: Foreign code sat on the last line behind hundreds of spaces; every editor showed a clean file, and a single-marker search missed a second variant.
 ROOT CAUSE: Search for one known marker instead of the shape of the trick.
 PROPOSED CHANGE: On suspicion, scan broadly on `HEAD` and `origin/main`, excluding lockfiles and binaries: lines with ≥200 consecutive spaces, `eval(`, `atob(`, `new Function(`, `global.<short>=`, `_$_`, `_0x`. Zero hits before push; zero hits on `origin/main` after push.
-STATUS: ADOPTED — 2026-09-08, `Rules/hooks/pre-commit` block 4 on added lines: runs of ≥200 spaces, `_0x…`, `_$_…`; not `eval`/`atob`/`Function` (real code uses them and the hook has no bypass). Excepted: vendored and `node_modules`, lockfiles, `*.min.js`, `*.map`, `*.svg`, this file. `pre-push` was removed with L-039. The hook covers hand-written files; build outputs, lockfiles and vendored code stay with the manual sweep. Counter-proof in `check-factory.sh`.
+STATUS: ADOPTED — 2026-09-08, `Rules/hooks/pre-commit` block 4 on added lines, bytewise: a run of 200+ blanks (space, tab, VT, NBSP, zero-width and other Unicode spaces), a CR followed by visible text on the same line, `_0x…` / `_$_…` at identifier start; not `eval`/`atob`/`Function` (real code uses them and the hook has no bypass). Not scanned, by decision: `vendor/` and `node_modules/` at any depth, root-level `dist/` and `build/`, lockfiles, `*.min.*`, `*.map`, `*.svg`, `*.md`, `*.txt` — those are for the manual sweep above. `pre-push` was removed with L-039. Counter-proofs in `check-factory.sh`. Revised by L-046 and L-052.
 
 ---
 
@@ -425,7 +425,7 @@ DATE: 2026-09-08
 SYMPTOM: `/adb-review` demanded a two-field hand with a commit range, but no method step committed a plan before Code; the Heavy path could not be reviewed without inventing a step or a third field.
 ROOT CAUSE: L-040 fixed the hand and forgot the one review that happens before there is a diff.
 PROPOSED CHANGE: SPEC writes the plan to `adb/` (`## Execution plan`) and MainAgent commits it before Code; that commit is the plan review's range. Written in `SKILL.md` BUILD, `/adb-slice` and `/adb-review`.
-STATUS: ADOPTED — 2026-09-08, `SKILL.md` SPEC, `adb-slice.md`, `adb-review.md`.
+STATUS: ADOPTED — 2026-09-08, `SKILL.md` SPEC, `adb-slice.md`, `adb-review.md`; the plan lives in `07-STATUS` `## Slice plan` and the commit is covered in `AGENTS.md` Hold since L-049.
 
 ---
 
@@ -435,7 +435,7 @@ DATE: 2026-09-08
 SYMPTOM: The review command said "break it on purpose" and "never implements", but not where. One mistyped `cd` and the reviewer's probes ran in the real repo: three probe commits on the factory's main, undone by hand.
 ROOT CAUSE: The command described the attitude, not the sandbox.
 PROPOSED CHANGE: `/adb-review` and `/adb-ready`: the reviewer changes nothing in the real tree — no writes, commits or resets; tests and breaking runs happen on a copy (`git worktree add` or a throwaway clone), removed afterwards; the last TRIED line proves `git status --porcelain` empty and HEAD unchanged. The verbatim report lands in chat and in `07-STATUS` under a preserved `## Last review` section, so "verbatim in STATUS" no longer collides with "header only".
-STATUS: ADOPTED — 2026-09-08, `adb-review.md`, `adb-ready.md`, `product-readiness/SKILL.md`, `SKILL.md` 07, `adb-status.md`.
+STATUS: ADOPTED — 2026-09-08, `adb-review.md`, `adb-ready.md`, `product-readiness/SKILL.md`, `SKILL.md` 07, `adb-status.md`. `## Last review` and the readiness block have one writer, MainAgent, verbatim (L-048); the sandbox reaches PLAIN through `AGENTS.md` (L-051).
 
 ---
 
@@ -476,3 +476,73 @@ SYMPTOM: Remotes live in `.git/config`; agents were legitimately asked to change
 ROOT CAUSE: The rule is a ban where its sister rules are gates ("ask the owner before …").
 PROPOSED CHANGE: Either narrow it (identity, `autocrlf`, `hooksPath`, "never to get around a rule") or give it the owner gate the other bans have. Not changed here: a rule change in `AGENTS.md` is the owner's decision.
 STATUS: PROPOSED — awaiting owner decision.
+
+---
+
+## L-048 — The readiness stamp had no lawful writer
+
+DATE: 2026-09-08
+SYMPTOM: The sandbox rule (the reviewer changes nothing in the real tree, proof `git status --porcelain` empty) was copied into `/adb-ready` and the readiness skill two lines below "only ReviewAgent writes the READINESS key". The reviewer had to write and was forbidden to write. `## Last review` had two writers: `SKILL.md` said ReviewAgent, `/adb-review` said MainAgent.
+ROOT CAUSE: A rule was added where it was asked for, not reconciled with the rule already standing next to it.
+PROPOSED CHANGE: One writer, everywhere: the reviewer delivers the block; MainAgent enters it into `07-STATUS` (`READINESS`, `## Readiness`, `## Last review`) verbatim and never alters it — no reviewer block, no stamp. The sandbox stays absolute and checkable. Chosen over a write-exception for the reviewer because one exception invites the next, and because the review command already worked this way. `check-factory.sh` fails on "ReviewAgent writes", "writes the READINESS", "does not change the key" anywhere in the factory.
+STATUS: ADOPTED — 2026-09-08, `adb-ready.md`, `product-readiness/SKILL.md`, `SKILL.md` 07 and COMPLETION, `adb-status.md`, `adb-review.md`, `check-factory.sh`.
+
+---
+
+## L-049 — The plan commit had no rule, and the plan had no place
+
+DATE: 2026-09-08
+SYMPTOM: `SKILL.md`, `/adb-slice` and `/adb-review` said "MainAgent commits the plan before Code"; `AGENTS.md` Hold said only "CodeAgent commits … no mid-slice noise commits", and `SKILL.md` defers to `AGENTS.md` for git. A rule-abiding agent skipped the commit, and the plan review had no range again. The plan was written into `## Execution plan`, the map of coming slices — two things in one section, no rule for when an entry leaves, and a small product with one Heavy slice had to open a section reserved for "several slices".
+ROOT CAUSE: L-042 fixed the command and the method file, not the rules file they inherit from; the section was borrowed instead of named.
+PROPOSED CHANGE: `AGENTS.md` Hold, one sentence: product truth written to `adb/` (DEFINE output, a slice plan) is committed by MainAgent as soon as it is written — content, not noise. The plan lives in `07-STATUS` `## Slice plan`: plan + done criteria of the slice being built; the next SPEC replaces it, history keeps the old. `## Execution plan` stays the map. `/adb-status` preserves `## Slice plan`. `AGENTS.md` grows by that sentence; size measured at the Git object in the adopting commit.
+STATUS: ADOPTED — 2026-09-08, `AGENTS.md` Hold, `SKILL.md` 07 and SPEC, `adb-slice.md`, `adb-review.md`, `adb-status.md`, `check-factory.sh`.
+
+---
+
+## L-050 — Guards that grep a path list guard the path list
+
+DATE: 2026-09-08
+SYMPTOM: The retired-word guards from L-041 searched fixed file lists; `push only when` in a LESEN page or `WALKED` in `/adb-review` passed. The severity guard was `grep -q 'CRITICAL'` over the file — delete the definition, the word survives in the verdict line, the check stays green.
+ROOT CAUSE: The guard tested for a word, not for the definition, and for files, not for the factory.
+PROPOSED CHANGE: Guards run `grep -r` over the whole factory (excluding `LESSONS.md`, which is history, and the check itself, which names the words) and target definitions: `**Severity:** CRITICAL`, `**Verdict:** FAIL`, the sandbox sentence, the plan range, the two `AGENTS.md` sentences. Each guard seen red on exactly what it promises.
+STATUS: ADOPTED — 2026-09-08, `check-factory.sh`.
+
+---
+
+## L-051 — The sandbox stopped at ADB; readiness had a range nobody could resolve
+
+DATE: 2026-09-08
+SYMPTOM: `AGENTS.md` demands a review in PLAIN projects too, but the sandbox rule lived only in `/adb-review`; a PLAIN reviewer was told to break things with no place and no way back. `/adb-ready` handed `RANGE: <last READINESS stamp>..HEAD`, which is not a Git object.
+ROOT CAUSE: The rule was written in the command that prompted it, not in the rules file every project reads; the readiness hand copied the review hand's shape without its meaning (a walk has no diff).
+PROPOSED CHANGE: `AGENTS.md` Review: "break it on purpose — on a copy, never in the real tree". `/adb-ready` hands `RANGE: HEAD` (the whole product) and `SPEC`; the reviewer diffs against the last stamp itself if it wants to.
+STATUS: ADOPTED — 2026-09-08, `AGENTS.md` Review, `adb-ready.md`, `product-readiness/SKILL.md`, `check-factory.sh`.
+
+---
+
+## L-052 — Trip-wire doors: docs, nested build folders, invisible blanks, the CR trick
+
+DATE: 2026-09-08
+SYMPTOM: The hook blocked `docs/security.md` and a README that name `_0xdeadbeef` — documentation about the hook — with no bypass. It let through 250 zero-width spaces, 250 vertical tabs, a mid-line CR that overwrites the head of a line on a terminal, and any file under a nested `dist/` or `build/` (`src/build/evil.js`).
+ROOT CAUSE: The blank class was ASCII; the build-folder exception matched at any depth by instruction; Markdown was scanned like code.
+PROPOSED CHANGE: Bytewise scan (`LC_ALL=C`): 200+ of space, tab, VT, NBSP, U+2000–U+200D, U+202F, U+205F, U+2060, U+3000, U+FEFF; a CR followed by visible text on the same line (`grep -U`, so Windows grep keeps the CR instead of stripping it before the match); markers as before. `dist/` and `build/` excepted at the repository root only — committed build output normally lives there, and a nested one is the hiding place; a monorepo that commits nested output gets a loud block and asks the factory. `*.md` and `*.txt` excepted (not executed). Accepted boundary, written here: dependency folders at any depth, lockfiles, minified files, maps, SVG, docs — the manual sweep of L-036 covers them, the hook does not.
+STATUS: ADOPTED — 2026-09-08, `Rules/hooks/pre-commit`, `check-factory.sh`.
+
+---
+
+## L-053 — The factory's own harness copies were 28-byte stubs on Windows
+
+DATE: 2026-09-08
+SYMPTOM: `Methods/ADB/.claude|.codex|.cursor/**/adb-*.md` and the three root `start.md` were Git symlinks; with `core.symlinks=false` the checkout holds a text file containing the path. `/adb-review` inside the factory loaded a path. Reported by the first review, not acted on, not recorded.
+ROOT CAUSE: Symlinks assumed a POSIX checkout; the README promised "one copy to edit" and nothing verified it.
+PROPOSED CHANGE: Real copies, produced by `install-commands.sh --copy` (and `cp` for `/start`); `check-factory.sh` fails when any of the 24 copies differs from its canonical file. README says so.
+STATUS: ADOPTED — 2026-09-08, `Methods/ADB/.claude|.codex|.cursor`, root `.claude|.codex|.cursor`, `Methods/ADB/README.md`, `check-factory.sh`.
+
+---
+
+## L-054 — A blocker rule a text product can never trigger
+
+DATE: 2026-09-08
+SYMPTOM: "RELEASE BLOCKERS — every CRITICAL, and every HIGH touching data, money, or security" never applies to the factory: it ships text. Two reviews found HIGH contradictions between copied files and had to argue them into blockers.
+ROOT CAUSE: The scale was written for products with data and money.
+PROPOSED CHANGE: Fourth category in `/adb-review`: every finding that leaves a rule an agent cannot follow.
+STATUS: ADOPTED — 2026-09-08, `adb-review.md`.

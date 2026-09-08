@@ -48,24 +48,28 @@ if [ -n "$assign" ]; then
   bad=1
 fi
 
-# 4. Hidden trailing content: a run of blanks (spaces or tabs) pushes code off every screen;
-#    _0x…/_$_… at identifier start are obfuscator names. Added lines only. Lockfiles, vendored, build output,
-#    minified, maps and SVG are noisy by nature; LESSONS.md quotes the markers.
+# 4. Hidden content: a run of 200+ blanks (space, tab, VT, NBSP, zero-width and other
+#    Unicode spaces) pushes code off every screen; a CR in the middle of a line lets the
+#    tail overwrite the head on a terminal; _0x…/_$_… at identifier start are obfuscator
+#    names. Added lines only, bytewise (LC_ALL=C, -U keeps a CR on Windows). Not scanned, by decision: dependency
+#    folders at any depth, root-level dist/ and build/, lockfiles, minified files, maps,
+#    SVG, Markdown and text — hidden content there is for the manual sweep (LESSONS L-036).
 hid=0
-trail='[[:blank:]]{200,}|(^|[^A-Za-z0-9_])_0x[0-9a-f]{4,}|(^|[^A-Za-z0-9_])_\$_[0-9a-f]{3,}'
+blank=$'([[:blank:]\v]|\xc2\xa0|\xe2\x80[\x80-\x8d]|\xe2\x80\xaf|\xe2\x81\x9f|\xe2\x81\xa0|\xe3\x80\x80|\xef\xbb\xbf)'
+trail="${blank}"'{200,}|'$'\r''[[:print:][:blank:]]|(^|[^A-Za-z0-9_])_0x[0-9a-f]{4,}|(^|[^A-Za-z0-9_])_\$_[0-9a-f]{3,}'
 while IFS= read -r f; do
   [ -n "$f" ] || continue
   case "$f" in
-    vendor/*|*/vendor/*|node_modules/*|*/node_modules/*|dist/*|*/dist/*|build/*|*/build/*) continue ;;
+    vendor/*|*/vendor/*|node_modules/*|*/node_modules/*|dist/*|build/*) continue ;;
     *.lock|package-lock.json|*/package-lock.json|pnpm-lock.yaml|*/pnpm-lock.yaml|yarn.lock|*/yarn.lock) continue ;;
-    *.min.js|*.min.mjs|*.min.css|*.map|*.svg|Methods/ADB/LESSONS.md) continue ;;
+    *.min.js|*.min.mjs|*.min.css|*.map|*.svg|*.md|*.txt) continue ;;
   esac
   found="$(git diff --cached --unified=0 --no-color -- "$f" \
-    | grep -E '^\+' | grep -Ev '^\+\+\+' \
-    | grep -E "$trail" || true)"
+    | LC_ALL=C grep -U -E '^\+' | LC_ALL=C grep -U -Ev '^\+\+\+' \
+    | LC_ALL=C grep -U -E "$trail" || true)"
   if [ -n "$found" ]; then
-    echo "BLOCKED: hidden trailing content or obfuscated name in $f:" >&2
-    printf '%s\n' "$found" | sed -E 's/[[:blank:]]{20,}/ <blank> /g' | cut -c1-120 | sed 's/^/  /' >&2
+    echo "BLOCKED: hidden content or obfuscated name in $f:" >&2
+    printf '%s\n' "$found" | LC_ALL=C sed -E "s/${blank}{20,}/ <blank> /g; s/"$'\r'"/<CR>/g" | cut -c1-120 | sed 's/^/  /' >&2
     hid=1
   fi
 done <<< "$staged"

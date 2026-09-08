@@ -9,9 +9,9 @@ Canonical for ADB products: that project’s `ADB.md` COMPLETION, plus this walk
 
 Use only when the owner asks about the **whole app** (Alpha / Beta / Live / “is the whole app done”). A job that matches its plan can be done while the app could still grow later. Bare “done” after a met plan is Talk in AGENTS.md, not this skill.
 
-MainAgent starts **ReviewAgent** (subagent). ReviewAgent never implements. ReviewAgent writes `READINESS` and overwrites `## Readiness`. MainAgent does not change the key.
+MainAgent starts **ReviewAgent** (subagent). ReviewAgent never implements. The reviewer's block replaces `READINESS` and `## Readiness`; MainAgent enters it verbatim and never alters it.
 
-Hand and rules as `/adb-review`: two fields (`RANGE`, `SPEC`), the reviewer fetches the rest itself, changes nothing in the real tree, breaks on a copy. Walk the current product on a real path (browser if UI; sign in yourself). Proof as `TRIED`: what you tried, what happened. A self-check must not return `LIVE`.
+Hand and rules as `/adb-review`: two fields (`RANGE: HEAD`, `SPEC`), the reviewer fetches the rest itself, changes nothing in the real tree, breaks on a copy. Walk the current product on a real path (browser if UI; sign in yourself). Proof as `TRIED`: what you tried, what happened. A self-check must not return `LIVE`.
 
 ```
 READINESS: NICHT_FERTIG | ALPHA | BETA | LIVE

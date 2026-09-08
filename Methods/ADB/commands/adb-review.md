@@ -15,7 +15,7 @@ RANGE: <from>..<to>
 SPEC:  adb/02-PRODUCT-SPEC.md §…, adb/07-STATUS.md §…
 ```
 
-No prose brief, no builder evidence, no “please confirm”. The reviewer runs `git diff <from>..<to>` and reads `adb/` itself. Plan review (Heavy, before Code): the range is the plan commit — SPEC writes the plan to `adb/` and MainAgent commits it before Code starts (`ADB.md` BUILD). Judge: decision-complete, executable without inventing scope, done criteria concrete, no work the spec does not require.
+No prose brief, no builder evidence, no “please confirm”. The reviewer runs `git diff <from>..<to>` and reads `adb/` itself. Plan review (Heavy, before Code): the range is the plan commit — SPEC writes the plan to `07-STATUS` `## Slice plan` and MainAgent commits it before Code starts (`ADB.md` BUILD). Judge: decision-complete, executable without inventing scope, done criteria concrete, no work the spec does not require.
 
 **The reviewer changes nothing in the repo.** No writes, no commits, no resets in the real working tree. Tests and breaking runs happen on a copy (`git worktree add <tmp> <to>` or a throwaway clone), removed afterwards. Last line of TRIED: `git status --porcelain` empty and `HEAD` unchanged in the real tree.
 
@@ -29,7 +29,7 @@ Heavy — every line of the matching class, each written as TRIED:
 
 **Severity:** CRITICAL — data loss, money wrong, security hole, core path broken. HIGH — a spec promise fails on a real path, or a Heavy line above fails. MEDIUM — works, but wrong in an edge, an empty / loading / error state, or drifts from `adb/`. LOW — wording, cosmetics, cleanliness.
 
-**Verdict:** FAIL — any CRITICAL or HIGH, spec diverges, or the real path could not be tried. PASS WITH ISSUES — only MEDIUM / LOW, each registered. PASS — nothing found. RELEASE BLOCKERS — every CRITICAL, and every HIGH touching data, money, or security; listed by finding.
+**Verdict:** FAIL — any CRITICAL or HIGH, spec diverges, or the real path could not be tried. PASS WITH ISSUES — only MEDIUM / LOW, each registered. PASS — nothing found. RELEASE BLOCKERS — every CRITICAL, every HIGH touching data, money, or security, and every finding that leaves a rule an agent cannot follow; listed by finding.
 
 **Report — this format, nothing added, nothing summarized:**
 
