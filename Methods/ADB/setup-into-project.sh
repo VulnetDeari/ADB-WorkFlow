@@ -538,7 +538,7 @@ else
   install_start_cmd
 fi
 
-# --- Git hooks (hard rules: no secrets in commits, no push to main without the owner) ---
+# --- Git hooks (hard rule: no secrets in commits). A method hook the factory no longer ships is removed on refresh. ---
 HOOKS_SRC="$SYSTEM_ROOT/Rules/hooks"
 install_hooks() {
   local hooks_dir name src dest
@@ -552,7 +552,7 @@ install_hooks() {
     [A-Za-z]:/*) ;;
     *) hooks_dir="$PROJECT/$hooks_dir" ;;
   esac
-  for name in pre-commit pre-push; do
+  for name in pre-commit; do
     src="$HOOKS_SRC/$name"
     [ -f "$src" ] || continue
     dest="$hooks_dir/$name"
@@ -575,6 +575,21 @@ install_hooks() {
     cp "$src" "$dest"
     chmod +x "$dest"
     note_changed "git hook $name"
+  done
+  # A method hook the factory no longer ships (header says so) must not keep enforcing a dropped rule. Foreign hooks stay.
+  local stale
+  for stale in "$hooks_dir"/*; do
+    [ -f "$stale" ] || continue
+    name="$(basename "$stale")"
+    case "$name" in *.sample|*.pre-method) continue ;; esac
+    [ -f "$HOOKS_SRC/$name" ] && continue
+    grep -q '^# Method hook' "$stale" || continue
+    if [ $CHECK -eq 1 ]; then
+      echo "WOULD REMOVE stale method hook $stale"
+      continue
+    fi
+    rm -f "$stale"
+    note_changed "git hook $name removed"
   done
 }
 install_hooks

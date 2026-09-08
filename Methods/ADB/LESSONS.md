@@ -418,3 +418,23 @@ SYMPTOM: Byte counts in the working tree differed from the Git object; tests tha
 ROOT CAUSE: `core.autocrlf=true` on Windows.
 PROPOSED CHANGE: Measure at the Git object, never the working tree; tests that read source normalize line endings.
 STATUS: ADOPTED — 2026-09-08, `AGENTS.md` Truth (the L-035 sentence: measure at the Git object); setup writes `.gitattributes` `* text=auto eol=lf` when none exists, never overwrites. Counter-proof in `check-factory.sh`.
+
+---
+
+## L-039 — The factory does not dictate landing
+
+DATE: 2026-09-08
+SYMPTOM: Agents halted finished, proven work waiting for a ritual phrase; the factory prescribed a landing procedure that belongs to the team, not the method.
+ROOT CAUSE: Landing policy was written into the method instead of left to the owner.
+PROPOSED CHANGE: Owner's decision: whoever pushes knows how. Remove, not reword: the "Push Main" gate and the squash / delete-the-branch / origin-keeps-only-main procedure from `AGENTS.md`; the main-blocking part of `pre-push` (it had no other part, so the hook goes and `--refresh` removes it from projects); the matching assertion in `check-factory.sh`; every mention of a push gate in method, Start, command and owner pages. Stays: secrets hook, CLOSED = verified, PROVE before RECORD.
+STATUS: ADOPTED — 2026-09-08, `AGENTS.md` Hold and Truth, `Rules/hooks/pre-push` removed, `setup-into-project.sh` removes method hooks the factory no longer ships, `check-factory.sh`, `SKILL.md`, LESEN templates.
+
+---
+
+## L-040 — Review that can actually find something
+
+DATE: 2026-09-08
+SYMPTOM: Per-slice reviews returned PASS every time while later inspections and the owner found dozens of defects in the same slices.
+ROOT CAUSE: The builder wrote the reviewer's brief and supplied the evidence; the reviewer read papers instead of exercising the product; the report format rewarded PASS; self-checks were recorded as independent reviews.
+PROPOSED CHANGE: (A) Fixed hand: `/adb-review` takes two fields only — commit range `<from>..<to>` and `adb/` pointers; the reviewer fetches diff and spec itself; the report goes to the owner verbatim, never as the builder's summary. (B) Reviewing means trying to break it: `TRIED` (command → result; run the tests, walk the real path, break on purpose) → `FOUND` (finding — evidence — expected) → `VERDICT`; no `TRIED`, no review. Heavy: a short mandatory list per class — money (rounding, double submit, reversal), login/permissions (fail-closed, wrong input, foreign tenant), deploy/infra (rollback), migration (way back, partial abort). (E) Honest naming: no separate reviewer is `Review: self-check` everywhere, `07-STATUS` included, never `ReviewAgent: PASS`. Checklists live in the command, not in `AGENTS.md`, which does not grow.
+STATUS: ADOPTED — 2026-09-08, `Methods/ADB/commands/adb-review.md`, `SKILL.md` Hands, `AGENTS.md` Review (net shorter after L-039).

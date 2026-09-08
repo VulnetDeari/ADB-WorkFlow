@@ -159,7 +159,7 @@ assert_plain_app "$PLAIN_APP" "--refresh without --plain stays PLAIN"
 grep -qi 'not switching' "$NO_SWITCH" || fail "--refresh on PLAIN without Start should warn"
 rm -f "$NO_SWITCH"
 
-# --- Git hooks: secrets blocked at commit, main blocked at push ---
+# --- Git hooks: secrets blocked at commit; the method does not gate pushes ---
 HOOK_APP="$(mktemp -d)"
 HOOK_REMOTE="$(mktemp -d)"
 trap 'rm -rf "$APP" "$PLAIN_APP" "$SETUP_PLAIN" "$RISK_APP" "$HOOK_APP" "$HOOK_REMOTE"' EXIT
@@ -170,7 +170,7 @@ git init -q --bare -b main "$HOOK_REMOTE"
 git -C "$HOOK_APP" remote add origin "$HOOK_REMOTE"
 Methods/ADB/setup-into-project.sh --plain "$HOOK_APP" >/dev/null
 [ -x "$HOOK_APP/.git/hooks/pre-commit" ] || fail "setup did not install pre-commit hook"
-[ -x "$HOOK_APP/.git/hooks/pre-push" ] || fail "setup did not install pre-push hook"
+[ ! -e "$HOOK_APP/.git/hooks/pre-push" ] || fail "setup installed a pre-push hook; the method does not gate pushes"
 
 printf 'harmless\n' > "$HOOK_APP/README.md"
 git -C "$HOOK_APP" add README.md
@@ -194,12 +194,20 @@ printf 'DB_PASSWORD=changeme-example\n' > "$HOOK_APP/.env.example"
 git -C "$HOOK_APP" add .env.example
 git -C "$HOOK_APP" commit -q -m "example" || fail "pre-commit blocked .env.example"
 
-if git -C "$HOOK_APP" push -q origin main 2>/dev/null; then
-  fail "pre-push did not block main"
-fi
+git -C "$HOOK_APP" push -q origin main 2>/dev/null || fail "push to main was blocked; the method does not gate pushes"
 git -C "$HOOK_APP" checkout -q -b feature
-git -C "$HOOK_APP" push -q origin feature 2>/dev/null || fail "pre-push blocked a feature branch"
-ALLOW_MAIN_PUSH=1 git -C "$HOOK_APP" push -q origin main 2>/dev/null || fail "ALLOW_MAIN_PUSH=1 did not allow main"
+# A stale method pre-push from an older factory goes on refresh; a foreign hook stays.
+printf '#!/usr/bin/env bash\n# Method hook (installed by setup-into-project.sh). Old push gate.\nexit 1\n' > "$HOOK_APP/.git/hooks/pre-push"
+chmod +x "$HOOK_APP/.git/hooks/pre-push"
+printf '#!/usr/bin/env bash\nexit 0\n' > "$HOOK_APP/.git/hooks/post-checkout"
+chmod +x "$HOOK_APP/.git/hooks/post-checkout"
+if git -C "$HOOK_APP" push -q origin feature 2>/dev/null; then
+  fail "the stale pre-push stand-in did not block; this counter-proof proves nothing"
+fi
+Methods/ADB/setup-into-project.sh --refresh --plain "$HOOK_APP" >/dev/null 2>&1
+[ ! -e "$HOOK_APP/.git/hooks/pre-push" ] || fail "refresh left a stale method pre-push hook in place"
+[ -x "$HOOK_APP/.git/hooks/post-checkout" ] || fail "refresh removed a foreign hook"
+git -C "$HOOK_APP" push -q origin feature 2>/dev/null || fail "a push was blocked after refresh"
 
 # --- Hook: hidden trailing content blocked; the same line under vendor/ passes ---
 printf 'export const a = 1;%250s// trailing\n' '' > "$HOOK_APP/trail.js"
@@ -242,4 +250,4 @@ printf '*.png binary\n' > "$KEEP_APP/.gitattributes"
 Methods/ADB/setup-into-project.sh --plain "$KEEP_APP" >/dev/null
 [ "$(cat "$KEEP_APP/.gitattributes")" = '*.png binary' ] || fail "setup overwrote an existing .gitattributes"
 
-echo "OK: factory can Start; PLAIN, risk=yes, and METHOD flips match; hooks block secrets, main and hidden trailing content; setup warns on sync folders and writes .gitattributes once"
+echo "OK: factory can Start; PLAIN, risk=yes, and METHOD flips match; the hook blocks secrets and hidden trailing content, never a push; setup warns on sync folders and writes .gitattributes once"

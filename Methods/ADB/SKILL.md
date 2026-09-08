@@ -5,7 +5,7 @@ description: "Ask. Decide. Build. Product method for large or risky projects. Ac
 
 # ADB
 
-Ask. Decide. Build. `AGENTS.md` applies unchanged — talk, proof, tests, roles, git, landing. This file adds only the method and never repeats it. Active only when `METHOD.md` says `METHOD: ADB`; missing or `PLAIN` → do not load. Setup copies and stamps this file; never hand-edit the copy.
+Ask. Decide. Build. `AGENTS.md` applies unchanged — talk, proof, tests, roles, git. This file adds only the method and never repeats it. Active only when `METHOD.md` says `METHOD: ADB`; missing or `PLAIN` → do not load. Setup copies and stamps this file; never hand-edit the copy.
 
 **Job:** write where the product must land in `adb/`, then build it in user-visible slices that fit in one context window and prove each one. Not a fake company.
 
@@ -67,7 +67,7 @@ Stop interviewing. `adb/` governs. A slice is done when its SPEC done-criteria a
 
 User-visible slices — not "entire backend first". Parallel only when jobs don't share files or unfinished deps. Large product: `## Execution plan` in 07.
 
-Hands, always in writing: PlanAgent gets the job + `adb/` and returns plan + done criteria. CodeAgent gets the brief — what, where, done, `adb/` pointers, proof — and returns diff + evidence + commit hash. ReviewAgent gets spec + plan + diff + evidence and returns a verdict. A hand is written down even when a role runs in this same chat (`AGENTS.md` fallback); no hand relies on chat history or the builder's story. Heavy (`AGENTS.md`): PlanAgent's plan + done criteria before CodeAgent builds.
+Hands, always in writing: PlanAgent gets the job + `adb/` and returns plan + done criteria. CodeAgent gets the brief — what, where, done, `adb/` pointers, proof — and returns diff + evidence + commit hash. ReviewAgent gets a commit range and `adb/` pointers, fetches diff and spec itself, and returns TRIED → FOUND → VERDICT, handed to the owner verbatim; no separate reviewer = `Review: self-check`, in STATUS too. A hand is written down even when a role runs in this same chat (`AGENTS.md` fallback); no hand relies on chat history or the builder's story. Heavy (`AGENTS.md`): PlanAgent's plan + done criteria before CodeAgent builds.
 
 **SPEC → BUILD → PROVE → RECORD**
 
