@@ -68,7 +68,10 @@ fi
 #    other Unicode spaces) pushes text off every screen; a CR followed by visible text lets the tail
 #    overwrite the head on a terminal. One rule for code only: _0x…/_$_… at identifier start are
 #    obfuscator names — *.md and *.txt legitimately name them, so they skip that rule. Added lines only,
-#    bytewise (LC_ALL=C); UTF-16 and other wide encodings are not covered (LESSONS L-052). Not scanned,
+#    bytewise (LC_ALL=C). grep -U is required: Git-Bash grep reading from a pipe strips EVERY CR of a
+#    CRLF-terminated line, not only the trailing one, so without it "evil();<CR>harmless" on a CRLF line
+#    reaches the pattern as "evil();harmless" (LESSONS L-060). UTF-16 and other wide encodings are not
+#    covered (LESSONS L-052). Not scanned,
 #    by decision: dependency folders at any depth, root-level dist/ and build/, lockfiles, minified files,
 #    maps, SVG — hidden content there is for the manual sweep (LESSONS L-036).
 hid=0
@@ -84,8 +87,8 @@ while IFS= read -r f; do
   esac
   case "$f" in *.md|*.txt) pat="$hidden" ;; *) pat="$hidden|$markers" ;; esac
   git diff --cached --unified=0 --no-color -- "$f" \
-    | LC_ALL=C grep -E '^\+' | LC_ALL=C grep -Ev '^\+\+\+' \
-    | LC_ALL=C grep -E "$pat" > "$scan_tmp"
+    | LC_ALL=C grep -U -E '^\+' | LC_ALL=C grep -U -Ev '^\+\+\+' \
+    | LC_ALL=C grep -U -E "$pat" > "$scan_tmp"
   st=("${PIPESTATUS[@]}")
   if ! scan_ok "${st[@]}"; then
     echo "BLOCKED: hidden-content scan failed on $f (git ${st[0]}, grep ${st[1]}/${st[2]}/${st[3]}) — a scan that cannot run does not pass." >&2

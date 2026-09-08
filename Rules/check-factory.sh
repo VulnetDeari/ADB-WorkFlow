@@ -289,7 +289,7 @@ hook_passes() { local rel="$1" why="$2"; git -C "$HOOK_APP" add -f "$rel"; git -
 { printf 'x'; rep 250 $'\xc2\xa0'; printf '//y\n'; } > "$HOOK_APP/nbsp.js"; hook_blocks nbsp.js "250 no-break spaces"
 printf 'evil();\rharmless comment\n' > "$HOOK_APP/crtrick.js"; hook_blocks crtrick.js "a mid-line CR overwrite"
 mkdir -p "$HOOK_APP/src/build"; printf 'var _0x%s = 1;\n' 'a1b2c3' > "$HOOK_APP/src/build/evil.js"; hook_blocks src/build/evil.js "an obfuscated name under a nested build/"
-printf '*.raw -text\n' >> "$HOOK_APP/.gitattributes"   # keep the CR in the index. Meaningful on POSIX only: Windows grep strips a trailing CR before the match (L-057).
+printf '*.raw -text\n' >> "$HOOK_APP/.gitattributes"   # keep the CR in the index; with grep -U the hook sees it on Windows too (L-060).
 printf 'crlf line\r\n' > "$HOOK_APP/crlf.raw"; hook_passes crlf.raw "a CRLF line ending (CR at end of line)"
 mkdir -p "$HOOK_APP/docs"; printf 'The hook blocks names like _0x%s.\n' 'deadbeef' > "$HOOK_APP/docs/security.md"; hook_passes docs/security.md "documentation that names the marker"
 
@@ -325,6 +325,15 @@ fi
 grep -q 'scan failed' "$FAKE_ERR" || { cat "$FAKE_ERR" >&2; rm -rf "$FAKEBIN"; rm -f "$FAKE_ERR"; fail "a failing grep blocked, but not for the stated reason"; }
 rm -rf "$FAKEBIN"; rm -f "$FAKE_ERR"
 git -C "$HOOK_APP" reset -q HEAD plain.txt; rm -f "$HOOK_APP/plain.txt"
+
+# --- Round four: a project with CRLF blobs (own .gitattributes / -text). Git-Bash grep reading from a pipe strips
+#     every CR of a CRLF-terminated line unless -U; a CR hidden mid-line would vanish before the pattern sees it (L-060).
+printf '*.win -text\n' >> "$HOOK_APP/.gitattributes"
+printf 'const ok = 1;\r\nevil();\rharmless comment\r\nconst done = 1;\r\n' > "$HOOK_APP/mixed.win"
+[ "$(git -C "$HOOK_APP" add -f mixed.win; git -C "$HOOK_APP" diff --cached -- mixed.win | tr -cd '\r' | wc -c)" -ge 4 ] || fail "CRLF probe did not keep its CR bytes in the index; this counter-proof proves nothing"
+git -C "$HOOK_APP" reset -q HEAD mixed.win
+hook_blocks mixed.win "a mid-line CR on a CRLF-terminated line in a CRLF project"
+printf 'const a = 1;\r\nfunction f() {\r\n  return a;\r\n}\r\n' > "$HOOK_APP/plain.win"; hook_passes plain.win "ordinary Windows CRLF source in a CRLF project"
 
 # --- Setup: warns inside a cloud-sync folder, silent elsewhere; .gitattributes written once, never overwritten ---
 SYNC_ROOT="$(mktemp -d)"

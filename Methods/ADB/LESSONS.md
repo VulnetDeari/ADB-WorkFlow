@@ -574,8 +574,8 @@ STATUS: ADOPTED — 2026-09-08, `Rules/hooks/pre-commit` blocks 2–4, `check-fa
 DATE: 2026-09-08
 SYMPTOM: `-U` (a GNU extension) was added so that Windows grep keeps a CR at the end of a line. Measured: the hook's rule targets a CR in the middle of a line, which grep finds with or without `-U`; removing `-U` from all three greps left every assertion green.
 ROOT CAUSE: The option served the "a CRLF line must pass" counter-proof, not the rule.
-PROPOSED CHANGE: `-U` removed; the CRLF probe stays in the check with the note that on Windows grep strips the trailing CR before the match, so that probe is only meaningful on POSIX. L-052 corrected.
-STATUS: ADOPTED — 2026-09-08, `Rules/hooks/pre-commit`, `check-factory.sh`.
+PROPOSED CHANGE (as decided that day): `-U` removed; the CRLF probe stays in the check with the note that on Windows grep strips the trailing CR before the match. **Withdrawn the same day (L-060):** the measurement behind this entry used `a<CR>b<LF>`, not `a<CR>b<CR><LF>`. On a CRLF-terminated line Git-Bash grep reading from a pipe strips every CR of the line — in the first grep of the chain, before the pattern grep runs — so without `-U` the CR rule is dead in every repository whose blobs carry CRLF (a project's own `.gitattributes`, which setup never overwrites, or `-text`). `-U` is back in all three greps of block 4.
+STATUS: WITHDRAWN — 2026-09-08, same day, by L-060: `-U` restored in `Rules/hooks/pre-commit` block 4; the CRLF-project assertion in `check-factory.sh` goes red without it.
 
 ---
 
@@ -592,7 +592,17 @@ STATUS: ADOPTED — 2026-09-08, `Rules/hooks/pre-commit`, `check-factory.sh`.
 ## L-059 — Open points from the third review, recorded, not changed
 
 DATE: 2026-09-08
-SYMPTOM: The reviewer named four findings outside the owner's release for the last round: the hook runs `git diff` and three greps per file (49 seconds for 300 files — one pass over the whole diff would fix it, but that is a rebuild); `/adb-ready` line "Walk the current product…" names no actor; `install-commands.sh` still defaults to symlinks while the factory and the projects use copies; the sandbox sentence recommends `git worktree`, which shares the repository with the real tree. A fifth from the same class, found by the agent: the retired-word guards in `check-factory.sh` end in `|| true` and would pass silently if `grep` failed.
+SYMPTOM: The reviewer named four findings outside the owner's release for the last round: the hook runs `git diff` and three greps per file (49 seconds for 300 files — one pass over the whole diff would fix it, but that is a rebuild); `/adb-ready` line "Walk the current product…" names no actor; `install-commands.sh` still defaults to symlinks while the factory and the projects use copies; the sandbox sentence recommends `git worktree`, which shares the repository with the real tree. A fifth from the same class, found by the agent: the retired-word guards in `check-factory.sh` end in `|| true` and would pass silently if `grep` failed. Two more from the fourth review: the index guard of L-056 (`staged=… || exit 1`) has no counter-proof — remove the `||` construct and the check stays green; and its `BLOCKED: cannot read the index` message drowns in about a hundred lines of git usage text.
 ROOT CAUSE: Out of scope by the owner's decision; written here so they do not vanish.
 PROPOSED CHANGE: None yet. Each is one small change when the owner opens the factory again.
 STATUS: OPEN — owner decision.
+
+---
+
+## L-060 — `grep -U` restored: the measurement that removed it covered LF lines only
+
+DATE: 2026-09-08
+SYMPTOM: L-057 removed `-U` on the reviewer's measurement that grep finds a mid-line CR with or without it. The measurement used `a<CR>b<LF>`. The fourth review measured `a<CR>b<CR><LF>`: on a CRLF-terminated line Git-Bash grep reading from a pipe strips every CR of the line, already in the first grep of the chain (`grep -E '^\+'`), so `evil();<CR>harmless comment<CR><LF>` reaches the pattern as `evil();harmless comment`. Same file, same commit, only difference `-U`: without it committed, with it blocked. The CR rule was dead in every repository whose blobs carry CRLF — a project's own `.gitattributes` (setup never overwrites one) or `-text`.
+ROOT CAUSE: A rule was withdrawn on a measurement that did not cover the case the rule exists for.
+PROPOSED CHANGE: `-U` back in all three greps of block 4, with the true reason in the hook comment. Blocks 2 and 3 stay without it: their patterns (key prefixes, `password=` assignments) contain no CR and do not depend on one; stripping a CR can only join bytes, never hide those matches. `check-factory.sh` gains the case itself: a `-text` file with a CR hidden mid-line and CRLF endings must be blocked (red without `-U`), and ordinary CRLF Windows source must pass. L-057 marked withdrawn, reason recorded.
+STATUS: ADOPTED — 2026-09-08, `Rules/hooks/pre-commit` block 4, `check-factory.sh`; L-057 WITHDRAWN.
