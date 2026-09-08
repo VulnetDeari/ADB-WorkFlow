@@ -45,14 +45,20 @@ grep -q 'the range is the plan commit' Methods/ADB/commands/adb-review.md || fai
 grep -q 'Product truth written to `adb/`' AGENTS.md || fail "AGENTS.md does not cover the plan commit (L-049)"
 grep -q 'on a copy, never in the real tree' AGENTS.md || fail "AGENTS.md sandbox half-sentence missing (L-051)"
 # Harness copies inside the factory are real files identical to the canonical command (symlinks are stubs on Windows).
+# Compare as Git stores them (LF): a checkout may hold CRLF for files nobody touched yet (L-038).
+same_text() { cmp -s <(sed 's/\r$//' "$1") <(sed 's/\r$//' "$2"); }
 for c in Methods/ADB/commands/adb*.md; do
   for d in .claude/commands .codex/prompts .cursor/commands; do
-    cmp -s "$c" "Methods/ADB/$d/$(basename "$c")" || fail "factory harness copy drifted or is a stub: Methods/ADB/$d/$(basename "$c")"
+    same_text "$c" "Methods/ADB/$d/$(basename "$c")" || fail "factory harness copy drifted or is a stub: Methods/ADB/$d/$(basename "$c")"
   done
 done
 for d in .claude/commands .codex/prompts .cursor/commands; do
-  cmp -s Rules/commands/start.md "$d/start.md" || fail "factory /start copy drifted or is a stub: $d/start.md"
+  same_text Rules/commands/start.md "$d/start.md" || fail "factory /start copy drifted or is a stub: $d/start.md"
 done
+# Copies must be regular files in Git too: with core.symlinks=false a stale 120000 index entry survives `git add` and ships the command text as a symlink target.
+if git ls-files -s Methods/ADB/.claude Methods/ADB/.codex Methods/ADB/.cursor .claude .codex .cursor 2>/dev/null | grep -q '^120000'; then
+  fail "factory harness copies are symlink entries in the index (mode 120000)"
+fi
 grep -q 'This folder is the method factory' AGENTS.md && fail "root AGENTS.md is still the old pointer"
 
 if grep -q 'MainAgent' Rules/AGENTS.md 2>/dev/null; then

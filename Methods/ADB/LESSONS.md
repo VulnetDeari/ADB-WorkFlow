@@ -535,7 +535,7 @@ DATE: 2026-09-08
 SYMPTOM: `Methods/ADB/.claude|.codex|.cursor/**/adb-*.md` and the three root `start.md` were Git symlinks; with `core.symlinks=false` the checkout holds a text file containing the path. `/adb-review` inside the factory loaded a path. Reported by the first review, not acted on, not recorded.
 ROOT CAUSE: Symlinks assumed a POSIX checkout; the README promised "one copy to edit" and nothing verified it.
 PROPOSED CHANGE: Real copies, produced by `install-commands.sh --copy` (and `cp` for `/start`); `check-factory.sh` fails when any of the 24 copies differs from its canonical file. README says so.
-STATUS: ADOPTED — 2026-09-08, `Methods/ADB/.claude|.codex|.cursor`, root `.claude|.codex|.cursor`, `Methods/ADB/README.md`, `check-factory.sh`.
+STATUS: ADOPTED — 2026-09-08, `Methods/ADB/.claude|.codex|.cursor`, root `.claude|.codex|.cursor`, `Methods/ADB/README.md`, `check-factory.sh`. Trap met on the way, fixed in the follow-up commit: with `core.symlinks=false` a `git reset` restored the 120000 index entries and the next `git add` kept that mode, shipping the command text as a symlink target; `check-factory.sh` now fails on any 120000 entry among the copies (seen red on the real index before the fix).
 
 ---
 
